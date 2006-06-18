@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Jive Software Connection Manager Readme</title>
+  <link href="style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<h1>Connection Manager Installation Guide</h1>
+
+<p>Connection Manager lets XMPP servers scale to a greater number
+of concurrent users. This document will guide you through installing
+Connection Manager as a standalone application. For a full list of
+features and more information, please visit the
+Wildfire website: <a href="http://www.jivesoftware.org/wildfire"
+ target="_top">http://www.jivesoftware.org/wildfire</a></p>
+
+<h2>Installation</h2>
+<ul>
+<h3>Windows</h3>
+
+ Uncompress cmanager.zip to <tt>c:\Program Files\cmanager</tt>.
+ 
+ <h3>Linux/Unix</h3>
+ 
+ If using the .tar.gz, extract the archive to <tt>/opt</tt> or <tt>/usr/bin</tt>:
+
+ <p><tt>tar -xzvf cmanager_3_0_0.tar.gz<br>
+ mv cmanager /opt</tt></p>
+
+ <p><b>Note:</b> the .tar.gz and .zip builds do not contain a bundled Java runtime (JRE). Therefore, you must have JDK or JRE 1.5.0 (Java 5) or later installed on your system. You can check your java version by typing "java -version" at the command line and (if necessary) upgrade your Java installation by visiting http://java.sun.com.</p>
+
+  </ul>
+<h2>Setup Overview</h2>
+<p>To complete the installation of Connection Manager, you'll need to
+perform each of the following steps: </p>
+<ol>
+  <li><a href="#config">Setup</a> - Configure properties to connect to XMPP server.</li>
+  <li><a href="#dns">DNS Setup</a> - Configure DNS to properly route traffic.</li>
+</ol>
+
+<p>This document also includes information on:</p>
+
+<ul>
+    <li><a href="#windows">Running under Windows</a>
+    <li><a href="#unix">Running under Unix/Linux</a>
+</ul>
+
+<h2><a name="distribution">Files in the Distribution</a></h2>
+<p> The files in your distribution should be as follows (some
+sub-directories omitted for brevity): </p>
+<pre>cmanager/
+ |- readme.html
+ |- license.html
+ |- conf/
+ |- bin/
+ |- lib/
+ |- resources/
+     |-security/
+ |- documentation/</pre>
+
+<ul> 
+	 <li>The <tt>conf</tt> directory is where Connection Manager stores
+configuration files.</li>
+  <li>The <tt>bin</tt> directory contains the server executables. Depending
+on which distribution you installed, different executables will be available.</li>
+  <li>The <tt>lib</tt> directory contains libraries necessary for
+running Connection Manager.</li>
+  <li>The <tt>resources/security</tt> directory is where Connection Manager
+maintains keystores to support SSL connection security.</li>
+  <li>The <tt>documentation</tt> directory contains server
+documentation.</li>
+</ul><p>
+
+</p>
+<h2><a name="config"></a>Properties Setup</h2>
+<p>Properties are stored in conf/manager.xml. Only two properties are required to be
+configured. The <b>xmpp.domain</b> property specifies the name of the target server
+that clients want to connect to. The server and connection managers have to share a
+common secret so that the server can let connection managers connect. Set the
+<b>xmpp.sharedSecret</b> property with the same shared secret that the server is using.
+</p>
+
+<h2><a name="dns">DNS Setup</a></h2>
+<p>XMPP requires that when clients or servers want to connect to another server a DNS
+SRV lookup must be performed to get the real IP address and port to use to connect.
+Currently Connection Managers only handle client-to-server traffic while server-to-server
+will go directly to the server. You will need to configure the DNS server so that client traffic
+is routed to Connection Managers. Depending on your architecture you may want to use a load
+balancer in front of a set of connection managers or just configure local DNS servers to
+redirect clients to a specific connection manager.<br>
+</p>
+
+<hr>
+
+<h2><a name="windows">Running Connection Manager in Windows</a></h2>
+
+<p>Use the cmanager.bat batch file to start the connection manager. The file is located
+in the <tt>bin/</tt> directory of your Connection Manager installation.
+<!--
+<h3>Windows Service</h3>
+<p>If you're running Wildfire on Windows, you will likely want to
+run Wildfire as a standard Windows service after initial setup.
+If you used the Windows installer, a <tt>wildfire-service.exe</tt> file
+will be in the <tt>bin</tt> directory of the installation. You can use
+this executable to install and control the Wildfire service.
+</p>
+
+From a console window, you can run the following commands:
+<ul>
+		<li><tt>wildfire-service /install</tt> -- installs the service.
+		<li><tt>wildfire-service /uninstall</tt> -- uninstalls the service.
+		<li><tt>wildfire-service /start</tt> -- starts the service
+		<li><tt>wildfire-service /stop</tt> -- stops the service.
+</ul>
+
+<p>
+<div align="center">
+<img src="images/windows_service.png" alt="Windows Service" width="557" height="223" align="center">
+</div>
+</p>
+
+<p>You can also use the Services tool in the Windows Control Panel to start and
+stop the service.</p>
+
+<p>Note: the graphical launcher is not compatible with the Windows service
+at this time. If you install the service, you should use service controls
+as described above to control the server rather than the graphical launcher.</p>
+-->
+<h3>Custom Parameters</h3>
+
+<p>Advanced users may wish to pass in parameters to the Java virtual machine (VM) to customize
+    the runtime environment of Connection Manager. You can do this by editing the bin/cmanager.bat
+    or bin/cmanager.sh files and configuring the JVM_SETTINGS variable accordingly. For example, to set
+    the minimum heap size to 512 MB and max VM heap size to 1024 MB, you'd use:
+
+<pre>-Xms512m -Xmx1024m</pre>
+</p>
+
+<h2><a name="unix">Running Connection Manager in Linux/Unix</a></h2>
+
+You can start Connection Manager using the <tt>bin/cmanager</tt> script in your
+Connection Manager installation:
+<p>
+<table border="0" cellpadding="2" cellspacing="0"><td bgcolor="#EEEEEE">
+<font face="verdana, arial, helvetica" size="2">
+You must make the ant script executable. From the build directory, type:
+<p></font><code>
+chmod u+x cmanager.sh
+</code>
+</td></table>
+</p>
+<p>
+# ./cmanager<br>
+<!-- <tt>
+# ./cmanager<br>
+Usage: ./cmanager {start|stop}<br>
+# ./cmanager start<br>
+Starting Connection Manager
+</tt></p>
+
+If you would like to install Connection Manager as a service, two scripts are provided in the <tt>bin/extra</tt>
+directory:
+<ul>
+    <li>redhat-postinstall.sh -- automatically installs Connection Manager as a service on Red Hat. It does so by creating a "jive" user and then copying the cmanagerd script to your init.d directory. This script must be run as root. Please see the comments in the script for additional information.</li>
+    <li>cmanagerd -- script to run Connection Manager as a service. You must manually configure this script. See the comments in
+the script for additional details.</li>
+</ul>-->
+
+</body>
+</html>

@@ -1,0 +1,80 @@
+#!/bin/sh
+
+# cmanagerd
+#
+# chkconfig: 2345 20 80
+# description: Used to start and stop the Connection Manager service
+# 
+# Script used to start Connection Manager as daemon
+# The script has currently been tested on Redhat Fedora Core 3,
+# but should theoretically work on most UNIX like systems
+#
+# before running this script make sure $CMANAGER_HOME/bin/cmanager is
+# executable by the user you want to run Connection Manager as
+# (chmod +x $CMANAGER_HOME/bin/cmanager)
+#
+# This script should be copied into /etc/init.d and linked into
+# your default runlevel directory.
+# You can find your default runlevel directory by typing: 
+# grep default /etc/inittab
+#
+# Link to the directory like follows
+# cd /etc/rc<num>.d
+# ln -s ../init.d/cmanagerd $90cmanagerd
+#
+
+# Set this to tell this script where Connection Manager lives
+# If this is not set the script will look for /opt/cmanager, then /usr/local/cmanager
+#export CMANAGER_HOME=
+
+# If there is a different user you would like to run this script as,
+# change the following line
+export CMANAGER_USER=jive
+
+# -----------------------------------------------------------------
+
+# If a Connection Manager home variable has not been specified, try to determine it
+if [ ! $CMANAGER_HOME ]; then
+	if [ -d "/opt/cmanager" ]; then
+		CMANAGER_HOME="/opt/cmanager"
+	elif [ -d "/usr/local/cmanager" ]; then
+		CMANAGER_HOME="/usr/local/cmanager"
+	else
+		echo "Could not find Connection Manager installation under /opt or /usr/local"
+		echo "Please specify the Connection Manager installation location in environment variable CMANAGER_HOME"
+		exit 1
+	fi
+fi
+
+
+function execCommand() {
+	OLD_PWD=`pwd`
+	cd $CMANAGER_HOME/bin
+	CMD="./cmanager $1"
+	su -c "$CMD" $CMANAGER_USER &
+	cd $OLD_PWD
+}
+
+
+start() {
+	execCommand "start"
+}
+
+stop() {
+	execCommand "stop"
+}
+
+
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	*)
+		echo "Usage $0 {start|stop}"
+		exit 1
+esac
+
+exit 0

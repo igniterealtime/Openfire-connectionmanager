@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    This file stores bootstrap properties needed by Connection Managers.
+    Property names must be in the format: "prop.name.is.blah=value"
+    That will be stored as:
+        <prop>
+            <name>
+                <is>
+                    <blah>value</blah>
+                </is>
+            </name>
+        </prop>
+-->
+<!-- root element, all properties must be under this element -->
+<jive>
+    <xmpp>
+        <!-- Name of the server to connect. This property is required. -->
+        <domain></domain>
+        <!-- TCP port to connect to the XMPP server on. -->
+        <port>5262</port>
+        <!-- Secret used for authentication that is shared between connection
+        managers and the server. This property is required. -->
+        <sharedSecret></sharedSecret>
+        <manager>
+            <!-- Name of the connection manager that uniquely identifies this manager.
+            This property is optional. A random name is generated if none was defined. -->
+            <name></name>
+            <!-- Number of connections to establish to the server. -->
+            <connections>5</connections>
+            <!-- Number of threads for processing incoming server traffic per connection. -->
+            <incoming>
+                <threads>5</threads>
+            </incoming>
+        </manager>
+        <server>
+            <certificate>
+                <!-- Flag that indicates if certificates of the server should be validated. -->
+                <verify>true</verify>
+                <verify>
+                    <!-- Flag that indicates if certificates chain should be validated. -->
+                    <chain>true</chain>
+                    <!-- Verify that the the last certificate in the chain was issued by
+                    a third-party that we trust. -->
+                    <root>true</root>
+                    <!-- For every certificate in the chain, verify that the certificate
+                    is valid at the current time. -->
+                    <validity>true</validity>
+                </verify>
+                <!-- Flag that indicates if self-signed certificates are accepted. -->
+                <accept-selfsigned>false</accept-selfsigned>
+            </certificate>
+        </server>
+        <client>
+            <!-- Milliseconds a client connection has to be idle to be closed.
+            Default is 30 minutes. -->
+            <idle>1800000</idle>
+        </client>
+        <socket>
+            <ssl>
+                <active>true</active>
+                <port>5223</port>
+                <storeType>jks</storeType>
+                <!-- <keystore></keystore>
+                <keypass></keypass>
+                <truststore></truststore>
+                <trustpass></trustpass> -->
+            </ssl>
+        </socket>
+    </xmpp>
+    <!-- Configure debug logger. -->
+    <log>
+        <debug>
+            <enabled>false</enabled>
+        </debug>
+    </log>
+</jive>
