@@ -134,8 +134,8 @@ public class ConnectionManager {
             setupMode = false;
         }
         else  {
-            Log.warn(LocaleUtils.getLocalizedString("setup.index.unable_locate_dir"));
-            System.err.println(LocaleUtils.getLocalizedString("setup.index.unable_locate_dir"));
+            Log.warn(LocaleUtils.getLocalizedString("setup.no_server_name"));
+            System.err.println(LocaleUtils.getLocalizedString("setup.no_server_name"));
         }
 
         if (isStandAlone()) {
