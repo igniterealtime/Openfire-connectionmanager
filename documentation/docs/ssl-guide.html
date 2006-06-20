@@ -1,25 +1,25 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-  <title>Connection Manager SSL Guide</title>
+  <title>Wildfire Connection Manager Module SSL Guide</title>
   <link type="text/css" rel="stylesheet" href="style.css">
 </head>
 <body>
 <a name="top"></a>
-<h1>Connection Manager SSL Guide</h1>
+<h1>Wildfire Connection Manager Module SSL Guide</h1>
 <h2>Introduction</h2>
 <p>
-This document outlines how to customize the SSL support in Connection Manager.
+This document outlines how to customize the SSL support in the connection manager module.
 <font color="red"><b>Important note:</b></font>
-because Connection Manager ships with self-signed certificates, it will work out of the box without
+because the module ships with self-signed certificates, it will work out of the box without
 installing your own certificate. However, most users will wish to user their own
 certificates.</p>
 
-<p>Connection Manager is a component that lies between clients and an XMPP server.
+<p>Connection managers is are modules that lie between clients and an XMPP server.
 Therefore, connections with clients may be secured as well as connections with the server.
 This document explains how to secure each part of the architecture.</p>
 
-<p>Connection Manager's SSL support is built using the standard Java security
+<p>The connection Manager module's SSL support is built using the standard Java security
 SSL implementation (javax.net.ssl.SSLServerSocket). In this document, we will
 describe how use the standard JDK 1.5 tools to accomplish these tasks.
 </p>
@@ -196,7 +196,7 @@ Now import each certificate using the keytool:
 </p>
 <p><tt>keytool -import -keystore truststore -alias user_name -file
 certificate_file</tt></p>
-<h3>7. Configure Connection Manager</h3>
+<h3>7. Configure the Connection Manager</h3>
 <p>
 Open the conf/manager.xml file in your favorite
 editor and add or change the following system properties:
