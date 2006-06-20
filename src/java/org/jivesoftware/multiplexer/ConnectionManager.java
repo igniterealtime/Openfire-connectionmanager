@@ -136,6 +136,15 @@ public class ConnectionManager {
         else  {
             Log.warn(LocaleUtils.getLocalizedString("setup.no_server_name"));
             System.err.println(LocaleUtils.getLocalizedString("setup.no_server_name"));
+            // Pause 5 seconds so the user knows what's going on. This especially helps users
+            // of the .bat file. Otherwise, an error message is displayed and the server
+            // dissapears right away.
+            try {
+                Thread.sleep(4000);
+            }
+            catch (Exception e) {
+                // Ignore.
+            }
         }
 
         if (isStandAlone()) {
