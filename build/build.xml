@@ -478,9 +478,6 @@
                 <filter token="version" value="${version}"/>
             </filterset>
         </copy>
-        <copy todir="${release.out.dir}/documentation/images" filtering="false" overwrite="true">
-            <fileset dir="${docs.dir}/docs/images"/>
-        </copy>
 
         <!-- Copy Javadocs -->
         <copy todir="${release.out.dir}/documentation/javadoc">
