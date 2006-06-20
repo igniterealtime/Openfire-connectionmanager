@@ -6,8 +6,8 @@ REM # $Revision: 1102 $
 REM # $Date: 2005-03-07 22:36:48 -0300 (Mon, 07 Mar 2005) $
 REM #
 
-REM # JVM_SETTINGS = "-Xms512m -Xmx1024m"
-JVM_SETTINGS = ""
+REM # SET JVM_SETTINGS = "-Xms512m -Xmx1024m"
+SET JVM_SETTINGS = ""
 
 if "%JAVA_HOME%" == "" goto javaerror
 if not exist "%JAVA_HOME%\bin\java.exe" goto javaerror
