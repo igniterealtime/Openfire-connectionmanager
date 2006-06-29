@@ -16,10 +16,10 @@ CMANAGER_USER="jive"
 CMANAGER_GROUP="jive"
 
 if [ ! $CMANAGER_HOME ]; then
-	if [ -d "/opt/cmanager" ]; then
-		CMANAGER_HOME="/opt/cmanager"
-	elif [ -d "/usr/local/cmanager" ]; then
-		CMANAGER_HOME="/usr/local/cmanager"
+	if [ -d "/opt/connection_manager" ]; then
+		CMANAGER_HOME="/opt/connection_manager"
+	elif [ -d "/usr/local/connection_manager" ]; then
+		CMANAGER_HOME="/usr/local/connection_manager"
 	fi
 fi
 

@@ -24,7 +24,7 @@
 #
 
 # Set this to tell this script where Connection Manager lives
-# If this is not set the script will look for /opt/cmanager, then /usr/local/cmanager
+# If this is not set the script will look for /opt/connection_manager, then /usr/local/connection_manager
 #export CMANAGER_HOME=
 
 # If there is a different user you would like to run this script as,
@@ -35,10 +35,10 @@ export CMANAGER_USER=jive
 
 # If a Connection Manager home variable has not been specified, try to determine it
 if [ ! $CMANAGER_HOME ]; then
-	if [ -d "/opt/cmanager" ]; then
-		CMANAGER_HOME="/opt/cmanager"
-	elif [ -d "/usr/local/cmanager" ]; then
-		CMANAGER_HOME="/usr/local/cmanager"
+	if [ -d "/opt/connection_manager" ]; then
+		CMANAGER_HOME="/opt/connection_manager"
+	elif [ -d "/usr/local/connection_manager" ]; then
+		CMANAGER_HOME="/usr/local/connection_manager"
 	else
 		echo "Could not find Connection Manager installation under /opt or /usr/local"
 		echo "Please specify the Connection Manager installation location in environment variable CMANAGER_HOME"

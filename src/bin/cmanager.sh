@@ -27,19 +27,19 @@ esac
 #if cmanager home is not set or is not a directory
 if [ -z "$CMANAGER_HOME" -o ! -d "$CMANAGER_HOME" ]; then
 
-	if [ -d /opt/cmanager ] ; then
-		CMANAGER_HOME="/opt/cmanager"
+	if [ -d /opt/connection_manager ] ; then
+		CMANAGER_HOME="/opt/connection_manager"
 	fi
 
-	if [ -d /usr/local/cmanager ] ; then
-		CMANAGER_HOME="/usr/local/cmanager"
+	if [ -d /usr/local/connection_manager ] ; then
+		CMANAGER_HOME="/usr/local/connection_manager"
 	fi
 
-	if [ -d ${HOME}/opt/cmanager ] ; then
-		CMANAGER_HOME="${HOME}/opt/cmanager"
+	if [ -d ${HOME}/opt/connection_manager ] ; then
+		CMANAGER_HOME="${HOME}/opt/connection_manager"
 	fi
 
-	#resolve links - $0 may be a link in cmanager's home
+	#resolve links - $0 may be a link in connection_manager's home
 	PRG="0"
 	progname=`basename "$0$"`
 

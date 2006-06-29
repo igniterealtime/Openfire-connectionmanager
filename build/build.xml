@@ -64,8 +64,8 @@
     <property name="version.major" value="3"/>
     <property name="version.minor" value="0"/>
     <property name="version.revision" value="0"/>
-    <property name="version.extra" value="beta"/> <!-- For 'beta' or 'alpha' -->
-    <property name="dist.prefix" value="cmanager"/>
+    <property name="version.extra" value=""/> <!-- For 'beta' or 'alpha' -->
+    <property name="dist.prefix" value="connection_manager"/>
 
     <property file="${basedir}/build/build.properties"/>
 
@@ -105,10 +105,10 @@
     <property name="installer.dest.dir" value="${release.dest.dir}/installers"/>
     <property name="installer.install4j.srcfile" value="${installer.src}/cmanager.install4j"/>
     <property name="installer.app_name" value="Connection Manager"/>
-    <property name="installer.app_short_name" value="cmanager"/>
-    <property name="installer.product_name" value="cmanager"/>
+    <property name="installer.app_short_name" value="connection_manager"/>
+    <property name="installer.product_name" value="connection_manager"/>
     <property name="installer.application_id" value="6886-9911-0474-3571"/>
-    <property name="installer.unix_install_dir" value="cmanager"/>
+    <property name="installer.unix_install_dir" value="connection_manager"/>
     <property name="installer.windows_install_dir" value="Connection Manager"/>
     <property name="installer.publisher" value="Jive Software"/>
     <property name="installer.publisher_url" value="www.jivesoftware.org"/>
@@ -404,13 +404,13 @@
 
         <!-- Create a new prop for the final release dirs then create the dirs -->
 
-        <!-- ie: cmanager -->
+        <!-- ie: connection_manager -->
         <property name="release.name" value="${dist.prefix}"/>
-        <!-- ie: cmanager_src -->
+        <!-- ie: connection_manager_src -->
         <property name="release.name.src" value="${dist.prefix}_src"/>
-        <!-- ie: cmanager_2_1_2 -->
+        <!-- ie: connection_manager_2_1_2 -->
         <property name="release.fullname" value="${dist.prefix}_${version.filename}"/>
-        <!-- ie: cmanager_src_2_1_2 -->
+        <!-- ie: connection_manager_src_2_1_2 -->
         <property name="release.fullname.src" value="${dist.prefix}_src_${version.filename}"/>
 
         <property name="release.out.dir" value="${release.dest.dir}/${release.name}"/>

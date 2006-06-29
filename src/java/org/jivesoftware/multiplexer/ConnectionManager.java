@@ -13,21 +13,21 @@ package org.jivesoftware.multiplexer;
 
 import org.dom4j.Document;
 import org.dom4j.io.SAXReader;
-import org.jivesoftware.util.*;
-import org.jivesoftware.multiplexer.net.SocketAcceptThread;
 import org.jivesoftware.multiplexer.net.SSLSocketAcceptThread;
+import org.jivesoftware.multiplexer.net.SocketAcceptThread;
 import org.jivesoftware.multiplexer.net.SocketSendingTracker;
+import org.jivesoftware.util.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 /**
  * Connection managers handle connections of clients that want to connect to a server. Each
@@ -129,7 +129,7 @@ public class ConnectionManager {
         name = JiveGlobals.getXMLProperty("xmpp.manager.name", StringUtils.randomString(5)).toLowerCase();
         serverName = JiveGlobals.getXMLProperty("xmpp.domain");
 
-        version = new Version(3, 0, 0, Version.ReleaseStatus.Beta, -1);
+        version = new Version(3, 0, 0, Version.ReleaseStatus.Release, -1);
         if (serverName != null) {
             setupMode = false;
         }
