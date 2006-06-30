@@ -36,7 +36,7 @@ import java.util.List;
  * server.<p>
  *
  * The only properties that needs to be configured during Connection Managers' setup are
- * <tt>xmpp.domain</tt> and <tt>xmpp.sharedSecret</tt>. The <tt>xmpp.domain</tt> property
+ * <tt>xmpp.domain</tt> and <tt>xmpp.password</tt>. The <tt>xmpp.domain</tt> property
  * defines the name of the target server that clients want to connect to. Clients are
  * redirected to a connection manager when trying to open a socket connection to the server.
  * This is typically done by configuring some local DNS server with a SRV record for the server
@@ -46,7 +46,7 @@ import java.util.List;
  *
  * The server and connection managers have to share a common secret so that the server can
  * let connection managers connect to the server and forward packets. Configure the
- * <tt>xmpp.sharedSecret</tt> property with the same shared secret that the server is using.<p>
+ * <tt>xmpp.password</tt> property with the same password to log into the server.<p>
  *
  * Each connection manager has to have a unique name that uniquely identifies it from other
  * connection managers. Use the property <tt>xmpp.manager.name</tt> to manually set a name. If this
@@ -251,7 +251,7 @@ public class ConnectionManager {
 
     private void startClientListeners(String localIPAddress) {
         // Start clients plain socket unless it's been disabled.
-        int port = 5222;
+        int port = JiveGlobals.getIntProperty("xmpp.socket.plain.port", 5222);
         ServerPort serverPort = new ServerPort(port, serverName, localIPAddress,
                 false, null, ServerPort.Type.client);
         try {
@@ -280,7 +280,7 @@ public class ConnectionManager {
 
     private void startClientSSLListeners(String localIPAddress) {
         // Start clients SSL unless it's been disabled.
-        int port = 5223;
+        int port = JiveGlobals.getIntProperty("xmpp.socket.ssl.port", 5223);
         String algorithm = JiveGlobals.getXMLProperty("xmpp.socket.ssl.algorithm");
         if ("".equals(algorithm) || algorithm == null) {
             algorithm = "TLS";
