@@ -337,10 +337,10 @@ public class ConnectionWorkerThread extends Thread {
     }
 
     private boolean doHandshake(String streamID, XMPPPacketReader reader) throws Exception {
-        String sharedSecret = JiveGlobals.getXMLProperty("xmpp.sharedSecret");
-        if (sharedSecret == null) {
-            // No shared secret was configued in the connection manager
-            Log.debug("CM - No shared secret was found. Configure xmpp.sharedSecret property");
+        String password = JiveGlobals.getXMLProperty("xmpp.password");
+        if (password == null) {
+            // No password was configued in the connection manager
+            Log.debug("CM - No password was found. Configure xmpp.password property");
             return false;
         }
         MessageDigest digest;
@@ -354,7 +354,7 @@ public class ConnectionWorkerThread extends Thread {
         }
 
         digest.update(streamID.getBytes());
-        String key = StringUtils.encodeHex(digest.digest(sharedSecret.getBytes()));
+        String key = StringUtils.encodeHex(digest.digest(password.getBytes()));
 
         Log.debug("OS - Sent handshake to host: " + serverName + " id: " + streamID);
 
