@@ -11,10 +11,10 @@
 
 package org.jivesoftware.multiplexer.net;
 
+import org.jivesoftware.multiplexer.ServerPort;
 import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.LocaleUtils;
 import org.jivesoftware.util.Log;
-import org.jivesoftware.multiplexer.ServerPort;
 
 import javax.net.ssl.SSLException;
 import java.io.IOException;
@@ -69,7 +69,7 @@ public class SSLSocketAcceptThread extends Thread {
         this.serverPort = serverPort;
         int port = serverPort.getPort();
         // Listen on a specific network interface if it has been set.
-        String interfaceName = JiveGlobals.getXMLProperty("network.interface");
+        String interfaceName = JiveGlobals.getXMLProperty("xmpp.socket.network.interface");
         InetAddress bindInterface = null;
         if (interfaceName != null) {
             try {

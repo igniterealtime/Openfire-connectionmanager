@@ -11,8 +11,8 @@
 
 package org.jivesoftware.multiplexer.net;
 
-import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.multiplexer.ServerPort;
+import org.jivesoftware.util.JiveGlobals;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -55,7 +55,7 @@ public class SocketAcceptThread extends Thread {
         super("Socket Listener at port " + serverPort.getPort());
         this.serverPort = serverPort;
         // Listen on a specific network interface if it has been set.
-        String interfaceName = JiveGlobals.getXMLProperty("network.interface");
+        String interfaceName = JiveGlobals.getXMLProperty("xmpp.socket.network.interface");
         InetAddress bindInterface = null;
         if (interfaceName != null) {
             if (interfaceName.trim().length() > 0) {
