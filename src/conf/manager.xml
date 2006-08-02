@@ -55,8 +55,10 @@
             <idle>1800000</idle>
         </client>
         <socket>
-            <!-- Default port to use for plain/TLS client connections. -->
-            <plain>5222</plain>
+            <plain>
+                <!-- Default port to use for plain/TLS client connections. -->
+                <port>5222</port>
+            </plain>
             <ssl>
                 <active>true</active>
                 <!-- Default port to use for client connections using old SSL method. -->
