@@ -251,7 +251,15 @@ public class ConnectionManager {
 
     private void startClientListeners(String localIPAddress) {
         // Start clients plain socket unless it's been disabled.
-        int port = JiveGlobals.getIntProperty("xmpp.socket.plain.port", 5222);
+        int port = 5222;
+        // Check if old property is being used for storing c2s port
+        if (JiveGlobals.getXMLProperty("xmpp.socket.plain.port") != null) {
+            port = JiveGlobals.getIntProperty("xmpp.socket.plain.port", 5222);
+        }
+        // Check if new property is being used for storing c2s port
+        else if (JiveGlobals.getXMLProperty("xmpp.socket.default.port") != null) {
+            port = JiveGlobals.getIntProperty("xmpp.socket.default.port", 5222);
+        }
         ServerPort serverPort = new ServerPort(port, serverName, localIPAddress,
                 false, null, ServerPort.Type.client);
         try {
