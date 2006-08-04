@@ -50,7 +50,7 @@ fi
 function execCommand() {
 	OLD_PWD=`pwd`
 	cd $CMANAGER_HOME/bin
-	CMD="./cmanager $1"
+	CMD="./cmanager.sh $1"
 	su -c "$CMD" $CMANAGER_USER &
 	cd $OLD_PWD
 }
