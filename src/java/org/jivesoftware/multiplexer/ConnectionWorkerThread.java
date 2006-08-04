@@ -122,22 +122,20 @@ public class ConnectionWorkerThread extends Thread {
         String realHostname = null;
         int port =
                 JiveGlobals.getIntProperty("xmpp.port", SocketAcceptThread.DEFAULT_MULTIPLEX_PORT);
-        int realPort = port;
         Socket socket = new Socket();
         try {
             // Get the real hostname to connect to using DNS lookup of the specified hostname
             DNSUtil.HostAddress address = DNSUtil.resolveXMPPServerDomain(serverName, port);
             realHostname = address.getHost();
-            realPort = address.getPort();
             Log.debug("CM - Trying to connect to " + serverName + ":" + port +
-                    "(DNS lookup: " + realHostname + ":" + realPort + ")");
+                    "(DNS lookup: " + realHostname + ":" + port + ")");
             // Establish a TCP connection to the Receiving Server
-            socket.connect(new InetSocketAddress(realHostname, realPort), 20000);
+            socket.connect(new InetSocketAddress(realHostname, port), 20000);
             Log.debug("CM - Plain connection to " + serverName + ":" + port + " successful");
         }
         catch (Exception e) {
             Log.error("Error trying to connect to server: " + serverName +
-                    "(DNS lookup: " + realHostname + ":" + realPort + ")", e);
+                    "(DNS lookup: " + realHostname + ":" + port + ")", e);
             return false;
         }
 
@@ -232,11 +230,11 @@ public class ConnectionWorkerThread extends Thread {
         }
         catch (SSLHandshakeException e) {
             Log.warn("Handshake error while connecting to server: " + serverName +
-                    "(DNS lookup: " + realHostname + ":" + realPort + ")", e);
+                    "(DNS lookup: " + realHostname + ":" + port + ")", e);
         }
         catch (Exception e) {
             Log.error("Error while connecting to server: " + serverName + "(DNS lookup: " +
-                    realHostname + ":" + realPort + ")", e);
+                    realHostname + ":" + port + ")", e);
         }
         // Close the connection
         if (connection != null) {
