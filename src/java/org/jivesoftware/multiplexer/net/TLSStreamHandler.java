@@ -12,6 +12,7 @@
 package org.jivesoftware.multiplexer.net;
 
 import org.bouncycastle.asn1.*;
+import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.Log;
 
 import javax.net.ssl.SSLEngine;
@@ -31,6 +32,8 @@ import java.nio.channels.WritableByteChannel;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * TLSStreamHandler is responsible for securing plain connections by negotiating TLS. By creating
@@ -81,6 +84,8 @@ public class TLSStreamHandler {
       */
     private static ByteBuffer hsBB = ByteBuffer.allocate(0);
 
+    private static Pattern cnPattern = Pattern.compile("(?i)(cn=)([^,]*)");
+
     /**
      * Returns the identities of the remote server as defined in the specified certificate. The
      * identities are defined in the subjectDN of the certificate and it can also be defined in
@@ -96,7 +101,10 @@ public class TLSStreamHandler {
         List<String> names = getSubjectAlternativeNames(x509Certificate);
         if (names.isEmpty()) {
             String name = x509Certificate.getSubjectDN().getName();
-            name = name.replace("CN=", "");
+            Matcher matcher = cnPattern.matcher(name);
+            if (matcher.find()) {
+                name = matcher.group(2);
+            }
             // Create an array with the unique identity
             names = new ArrayList<String>();
             names.add(name);
@@ -171,7 +179,7 @@ public class TLSStreamHandler {
      * @throws java.io.IOException
      */
     public TLSStreamHandler(Socket socket, boolean clientMode, String remoteServer,
-            boolean needClientAuth) throws IOException {
+                            boolean needClientAuth) throws IOException {
         wrapper = new TLSWrapper(clientMode, needClientAuth, remoteServer);
         tlsEngine = wrapper.getTlsEngine();
         reader = new TLSStreamReader(wrapper, socket);
@@ -206,7 +214,20 @@ public class TLSStreamHandler {
             tlsEngine.beginHandshake();
         }
         else if (needClientAuth) {
-            tlsEngine.setNeedClientAuth(true);
+            // Only REQUIRE client authentication if we are fully verifying certificates
+            if (JiveGlobals.getBooleanProperty("xmpp.server.certificate.verify", true) &&
+                    JiveGlobals.getBooleanProperty("xmpp.server.certificate.verify.chain", true) &&
+                    !JiveGlobals
+                            .getBooleanProperty("xmpp.server.certificate.accept-selfsigned", false))
+            {
+                tlsEngine.setNeedClientAuth(true);
+            }
+            else {
+                // Just indicate that we would like to authenticate the client but if client
+                // certificates are self-signed or have no certificate chain then we are still
+                // good
+                tlsEngine.setWantClientAuth(true);
+            }
         }
     }
 
