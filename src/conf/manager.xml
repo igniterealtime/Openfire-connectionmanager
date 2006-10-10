@@ -74,6 +74,9 @@
                 <interface></interface>
             </network> -->
         </socket>
+        <httpbind>
+            <enabled>false</enabled>
+        </httpbind>
     </xmpp>
     <!-- Configure debug logger. -->
     <log>

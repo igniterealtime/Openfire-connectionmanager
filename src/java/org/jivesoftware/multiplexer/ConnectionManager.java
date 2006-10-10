@@ -16,6 +16,7 @@ import org.dom4j.io.SAXReader;
 import org.jivesoftware.multiplexer.net.SSLSocketAcceptThread;
 import org.jivesoftware.multiplexer.net.SocketAcceptThread;
 import org.jivesoftware.multiplexer.net.SocketSendingTracker;
+import org.jivesoftware.multiplexer.net.http.HttpBindManager;
 import org.jivesoftware.util.*;
 
 import java.io.File;
@@ -102,6 +103,7 @@ public class ConnectionManager {
     private ServerSurrogate serverSurrogate;
     private SocketAcceptThread socketThread;
     private SSLSocketAcceptThread sslSocketThread;
+    private HttpBindManager httpBindManager;
 
     /**
      * Returns a singleton instance of ConnectionManager.
@@ -236,11 +238,14 @@ public class ConnectionManager {
         startClientListeners(localIPAddress);
         // Start the port listener for secured clients
         startClientSSLListeners(localIPAddress);
+        // Start http bind listener
+        startHttpBindServlet();
     }
 
     private void stopModules() {
         stopClientListeners();
         stopClientSSLListeners();
+        stopHttpBindServlet();
         // Stop process that checks health of socket connections
         SocketSendingTracker.getInstance().shutdown();
         // Stop service that forwards packets to the server
@@ -316,6 +321,41 @@ public class ConnectionManager {
         if (sslSocketThread != null) {
             sslSocketThread.shutdown();
             sslSocketThread = null;
+        }
+    }
+
+    private void startHttpBindServlet() {
+        boolean httpBindEnabled = JiveGlobals.getBooleanProperty("xmpp.httpbind.enabled", false);
+        if (!httpBindEnabled) {
+            return;
+        }
+
+        int plainPort = JiveGlobals.getIntProperty("xmpp.httpbind.port.plain", 8080);
+        int sslPort = JiveGlobals.getIntProperty("xmpp.httpbind.port.secure", 8443);
+        httpBindManager = new HttpBindManager(plainPort, sslPort);
+
+        try {
+            httpBindManager.startup();
+        }
+        catch (Exception e) {
+            httpBindManager = null;
+            System.err.println("Error starting http bind servlet " + plainPort + "and" + sslPort
+                    + ": " + e.getMessage());
+            Log.error(LocaleUtils.getLocalizedString("admin.error.http.bind"), e);
+        }
+    }
+
+    private void stopHttpBindServlet() {
+        if (httpBindManager != null) {
+            try {
+                httpBindManager.shutdown();
+            }
+            catch (Exception e) {
+                Log.error(e);
+            }
+            finally {
+                httpBindManager = null;
+            }
         }
     }
 
