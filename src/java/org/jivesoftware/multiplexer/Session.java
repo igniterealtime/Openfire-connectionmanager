@@ -11,7 +11,11 @@
 
 package org.jivesoftware.multiplexer;
 
+import org.dom4j.Element;
+
 import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The session represents a connection between the server and a client (c2s) or
@@ -28,7 +32,7 @@ public abstract class Session {
     /**
      * Version of the XMPP spec supported as MAJOR_VERSION.MINOR_VERSION (e.g. 1.0).
      */
-	public static final int MAJOR_VERSION = 1;
+    public static final int MAJOR_VERSION = 1;
     public static final int MINOR_VERSION = 0;
 
     /**
@@ -59,6 +63,44 @@ public abstract class Session {
     private String serverName;
 
     private Date startDate = new Date();
+
+    /**
+     * Map of existing sessions. A session is added just after the initial stream header
+     * was processed. Key: stream ID, value: the session.
+     */
+    private static Map<String, Session> sessions = new ConcurrentHashMap<String, Session>();
+
+    public static StreamIDFactory idFactory = new StreamIDFactory();
+
+    public static void addSession(String streamID, Session session) {
+        sessions.put(streamID, session);
+    }
+
+    protected static void removeSession(String streamID) {
+        sessions.remove(streamID);
+    }
+
+        /**
+     * Returns the session whose stream ID matches the specified stream ID.
+     *
+     * @param streamID the stream ID of the session to look for.
+     * @return the session whose stream ID matches the specified stream ID.
+     */
+    public static Session getSession(String streamID) {
+        return sessions.get(streamID);
+    }
+
+    /**
+     * Closes connections of connected clients since the server or the connection
+     * manager is being shut down. If the server is the one that is being shut down
+     * then the connection manager will keep running and will try to establish new
+     * connections to the server (on demand).
+     */
+    public static void closeAll() {
+        for (Session session : sessions.values()) {
+            session.close(true);
+        }
+    }
 
     /**
      * Creates a session with an underlying connection and permission protection.
@@ -132,6 +174,10 @@ public abstract class Session {
      * was the one that originated the close action.
      */
     public abstract void close();
+
+    public abstract void close(boolean isServerShuttingDown);
+
+    public abstract void deliver(Element stanza);
 
     public String toString() {
         return super.toString() + " status: " + status + " id: " + streamID;

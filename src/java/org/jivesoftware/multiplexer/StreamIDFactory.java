@@ -22,7 +22,7 @@ import java.util.Random;
  *
  * @author Gaston Dombiak
  */
-class StreamIDFactory {
+public class StreamIDFactory {
     /**
      * The random number to use, someone with Java can predict stream IDs if they can guess the current seed *
      */

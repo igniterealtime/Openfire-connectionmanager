@@ -11,22 +11,19 @@ package org.jivesoftware.multiplexer.net.http;
 import org.jivesoftware.multiplexer.Connection;
 import org.dom4j.Element;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 /**
  *
  */
-public class HttpConnection implements Connection {
-    private int majorVersion = 1;
-    private int minorVersion = 0;
+public class HttpConnection {
+    private Connection.CompressionPolicy compressionPolicy;
+    private long requestId;
+
+    public HttpConnection(long requestID) {
+        this.requestId = requestID;
+    }
 
     public boolean validate() {
         return false;
-    }
-
-    public InetAddress getInetAddress() throws UnknownHostException {
-        return null;
     }
 
     public void close() {
@@ -46,34 +43,19 @@ public class HttpConnection implements Connection {
     public void deliver(Element doc) {
     }
 
-    public void deliverRawText(String text) {
-    }
-
-    public boolean isFlashClient() {
-        return false;
-    }
-
-    public int getMajorXMPPVersion() {
-        return majorVersion;
-    }
-
-    public int getMinorXMPPVersion() {
-        return minorVersion;
-    }
-
-    public String getLanguage() {
-        return null;
-    }
-
     public boolean isCompressed() {
         return false;
     }
 
-    public CompressionPolicy getCompressionPolicy() {
-        return null;
+    public Connection.CompressionPolicy getCompressionPolicy() {
+        return compressionPolicy;
     }
 
-    public TLSPolicy getTlsPolicy() {
-        return null;
+    public void setCompressionPolicy(Connection.CompressionPolicy compressionPolicy) {
+        this.compressionPolicy = compressionPolicy;
+    }
+
+    public long getRequestId() {
+        return requestId;
     }
 }

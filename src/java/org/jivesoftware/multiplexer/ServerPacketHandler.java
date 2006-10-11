@@ -70,7 +70,7 @@ class ServerPacketHandler {
                     // Check if the server is informing us that we need to close a session
                     if (wrapper.element("close") != null) {
                         // Get the session that matches the requested stream ID
-                        ClientSession session = ClientSession.getSession(streamID);
+                        Session session = Session.getSession(streamID);
                         if (session != null) {
                             session.close();
                         }
@@ -123,11 +123,12 @@ class ServerPacketHandler {
         // Get the wrapped stanza
         Element stanza = (Element) route.elementIterator().next();
         // Get the session that matches the requested stream ID
-        ClientSession session = ClientSession.getSession(streamID);
+        Session session = Session.getSession(streamID);
         if (session != null) {
             // Deliver the wrapped stanza to the client
             session.deliver(stanza);
-        } else {
+        }
+        else {
             // Inform the server that the wrapped stanza was not delivered
             String tag = stanza.getName();
             if ("message".equals(tag)) {

@@ -55,7 +55,7 @@ public class ServerSurrogate {
     /**
      * Cache the SASL mechanisms supported by the server for client authentication
      */
-    private String saslMechanisms;
+    private Element saslMechanisms;
     /**
      * Flag indicating if non-sasl authentication is supported by the server.
      */
@@ -146,7 +146,7 @@ public class ServerSurrogate {
      *
      * @param streamID the stream ID assigned by the connection manager to the new session.
      */
-    void clientSessionCreated(final String streamID) {
+    public void clientSessionCreated(final String streamID) {
         threadPool.execute(new NewSessionTask(streamID));
     }
 
@@ -190,6 +190,10 @@ public class ServerSurrogate {
      * @return the SASL mechanisms supported by the server for client authentication.
      */
     public String getSASLMechanisms(Session session) {
+        return saslMechanisms.asXML();
+    }
+
+    public Element getSASLMechanismsElement(Session session) {
         return saslMechanisms;
     }
 
@@ -199,7 +203,7 @@ public class ServerSurrogate {
      * @param mechanisms the SASL mechanisms supported by the server for client authentication.
      */
     public void setSASLMechanisms(Element mechanisms) {
-        saslMechanisms = mechanisms.asXML();
+        saslMechanisms = mechanisms.createCopy();
     }
 
     /**

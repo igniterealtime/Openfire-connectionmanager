@@ -22,9 +22,6 @@ import org.jivesoftware.util.JiveGlobals;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
  * Session that represents a client to server connection.
  *
@@ -45,14 +42,6 @@ public class ClientSession extends Session {
      */
     private static long idleTimeout;
 
-    private static StreamIDFactory idFactory = new StreamIDFactory();
-
-    /**
-     * Map of existing sessions. A session is added just after the initial stream header
-     * was processed. Key: stream ID, value: the session.
-     */
-    private static Map<String, ClientSession> sessions =
-            new ConcurrentHashMap<String, ClientSession>();
     /**
      * Socket reader that is processing incoming packets from the client.
      */
@@ -148,7 +137,7 @@ public class ClientSession extends Session {
         // Set the stream ID that identifies the client when forwarding traffic to a client fails
         ((ClientFailoverDeliverer) connection.getPacketDeliverer()).setStreamID(streamID);
         // Register that the new session is associated with the specified stream ID
-        sessions.put(streamID, session);
+        Session.addSession(streamID, session);
         // Send to the server that a new client session has been created
         serverSurrogate.clientSessionCreated(streamID);
 
@@ -204,28 +193,6 @@ public class ClientSession extends Session {
 
         connection.deliverRawText(sb.toString());
         return session;
-    }
-
-    /**
-     * Closes connections of connected clients since the server or the connection
-     * manager is being shut down. If the server is the one that is being shut down
-     * then the connection manager will keep running and will try to establish new
-     * connections to the server (on demand).
-     */
-    public static void closeAll() {
-        for (ClientSession session : sessions.values()) {
-            session.close(true);
-        }
-    }
-
-    /**
-     * Returns the session whose stream ID matches the specified stream ID.
-     *
-     * @param streamID the stream ID of the session to look for.
-     * @return the session whose stream ID matches the specified stream ID.
-     */
-    public static ClientSession getSession(String streamID) {
-        return sessions.get(streamID);
     }
 
     public ClientSession(String serverName, Connection connection, String streamID) {
@@ -327,7 +294,7 @@ public class ClientSession extends Session {
             // Changhe the status to closed
             status = STATUS_CLOSED;
             // Remove session from list of sessions
-            sessions.remove(getStreamID());
+            removeSession(getStreamID());
             // Tell the server that the client session has been closed
             ConnectionManager.getInstance().getServerSurrogate().clientSessionClosed(getStreamID());
         }

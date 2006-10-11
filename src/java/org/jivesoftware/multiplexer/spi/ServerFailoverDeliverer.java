@@ -12,8 +12,8 @@
 package org.jivesoftware.multiplexer.spi;
 
 import org.dom4j.Element;
-import org.jivesoftware.multiplexer.ClientSession;
 import org.jivesoftware.multiplexer.PacketDeliverer;
+import org.jivesoftware.multiplexer.Session;
 
 /**
  * Deliverer to use when a stanza received from a client failed to be forwarded
@@ -42,7 +42,7 @@ public class ServerFailoverDeliverer implements PacketDeliverer {
                 error.addElement("internal-server-error")
                         .addAttribute("xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas");
                 // Get the session that matches the specified stream ID
-                ClientSession session = ClientSession.getSession(streamID);
+                Session session = Session.getSession(streamID);
                 if (session != null) {
                     // Bounce the failed packet
                     session.deliver(reply);
