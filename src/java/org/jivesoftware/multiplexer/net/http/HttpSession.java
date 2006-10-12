@@ -45,7 +45,6 @@ public class HttpSession extends Session {
     public void deliver(Element stanza) {
     }
 
-
     /**
      * This attribute specifies the longest time (in seconds) that the connection manager is allowed
      * to wait before responding to any request during the session. This enables the client to

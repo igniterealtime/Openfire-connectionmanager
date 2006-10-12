@@ -9,7 +9,7 @@
 package org.jivesoftware.multiplexer.net.http;
 
 import org.jivesoftware.multiplexer.Connection;
-import org.dom4j.Element;
+
 
 /**
  *
@@ -17,6 +17,8 @@ import org.dom4j.Element;
 public class HttpConnection {
     private Connection.CompressionPolicy compressionPolicy;
     private long requestId;
+    private String body;
+    private HttpSession session;
 
     public HttpConnection(long requestID) {
         this.requestId = requestID;
@@ -40,7 +42,12 @@ public class HttpConnection {
         return false;
     }
 
-    public void deliver(Element doc) {
+    public void deliverBody(String body) {
+        this.body = body;
+    }
+
+    public String getDeliverable() {
+        return body;
     }
 
     public boolean isCompressed() {
@@ -57,5 +64,23 @@ public class HttpConnection {
 
     public long getRequestId() {
         return requestId;
+    }
+
+    /**
+     * Set the session that this connection belongs to.
+     *
+     * @param session the session that this connection belongs to.
+     */
+    void setSession(HttpSession session) {
+        this.session = session;
+    }
+
+    /**
+     * Returns the session that this connection belongs to.
+     *
+     * @return the session that this connection belongs to.
+     */
+    public HttpSession getSession() {
+        return session;
     }
 }

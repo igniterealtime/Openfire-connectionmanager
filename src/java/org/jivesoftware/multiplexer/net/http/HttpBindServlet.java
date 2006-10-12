@@ -77,8 +77,40 @@ public class HttpBindServlet extends HttpServlet {
     }
 
     private void createNewSession(HttpServletRequest request, HttpServletResponse response,
-                                  Element rootNode)
+                                  Element rootNode) throws IOException {
+        long rid = getLongAttribue(rootNode.attributeValue("rid"), -1);
+        if(rid <= 0) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Body missing RID (Request ID)");
+            return;
+        }
+
+        HttpConnection connection = new HttpConnection(rid);
+        connection.setSession(sessionManager.createSession(rootNode, connection));
+        respond(response, connection);
+    }
+
+    private void respond(HttpServletResponse response, HttpConnection connection)
+            throws IOException
     {
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setContentType("text/xml");
+        response.setCharacterEncoding("utf-8");
+
+        byte [] content = connection.getDeliverable().getBytes();
+        response.setContentLength(content.length);
+        response.getOutputStream().write(content);
+    }
+
+    private long getLongAttribue(String value, long defaultValue) {
+        if(value == null || "".equals(value)) {
+            return defaultValue;
+        }
+        try {
+            return Long.valueOf(value);
+        }
+        catch (Exception ex) {
+            return defaultValue;
+        }
     }
 
     private Document createDocument(HttpServletRequest request) throws

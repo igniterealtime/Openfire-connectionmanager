@@ -13,13 +13,13 @@ import org.jivesoftware.multiplexer.ServerSurrogate;
 import org.jivesoftware.multiplexer.ConnectionManager;
 import org.jivesoftware.multiplexer.Session;
 import org.dom4j.Element;
-import org.dom4j.DocumentHelper;
 
 /**
  *
  */
 public class HttpSessionManager {
-        /**
+
+    /**
      * Milliseconds a connection has to be idle to be closed. Default is 30 minutes. Sending
      * stanzas to the client is not considered as activity. We are only considering the connection
      * active when the client sends some data or hearbeats (i.e. whitespaces) to the server.
@@ -48,11 +48,17 @@ public class HttpSessionManager {
      */
     private static int pollingInterval;
 
+    private String serverName;
+
     static {
         // Set the default read idle timeout. If none was set then assume 30 minutes
-        inactivityTimeout = JiveGlobals.getIntProperty("xmpp.httpbind.client.idle", 30 * 1000);
+        inactivityTimeout = JiveGlobals.getIntProperty("xmpp.httpbind.client.idle", 30);
         maxRequests = JiveGlobals.getIntProperty("xmpp.httpbind.client.requests.max", 2);
         pollingInterval = JiveGlobals.getIntProperty("xmpp.httpbind.client.requests.polling", 5);
+    }
+
+    public HttpSessionManager(String serverName) {
+        this.serverName = serverName;
     }
 
     public HttpSession getSession(String streamID) {
@@ -63,8 +69,7 @@ public class HttpSessionManager {
         return null;
     }
 
-    public HttpSession createSession(String serverName, Element rootNode, HttpConnection connection)
-    {
+    public HttpSession createSession(Element rootNode, HttpConnection connection) {
         // TODO Check if IP address is allowed to connect to the server
 
         // Default language is English ("en").
@@ -76,8 +81,6 @@ public class HttpSessionManager {
         int wait = getIntAttribute(rootNode.attributeValue("wait"), 60);
         int hold = getIntAttribute(rootNode.attributeValue("hold"), 1);
 
-        long rid = getLongAttribue(rootNode.attributeValue("rid"), -1);
-
         ServerSurrogate serverSurrogate = ConnectionManager.getInstance().getServerSurrogate();
         // Indicate the compression policy to use for this connection
         connection.setCompressionPolicy(serverSurrogate.getCompressionPolicy());
@@ -87,23 +90,9 @@ public class HttpSessionManager {
         session.setHold(hold);
         // Store language and version information in the connection.
         session.setLanaguage(language);
-        session.addConnection(connection);
-
-        session.deliver(createSessionCreationResponse(session, serverSurrogate));
+        connection.deliverBody(createSessionCreationResponse(session, serverSurrogate));
 
         return session;
-    }
-
-    private long getLongAttribue(String value, long defaultValue) {
-        if(value == null || "".equals(value)) {
-            return defaultValue;
-        }
-        try {
-            return Long.valueOf(value);
-        }
-        catch (Exception ex) {
-            return defaultValue;
-        }
     }
 
     private HttpSession createSession(String serverName) {
@@ -130,21 +119,25 @@ public class HttpSessionManager {
         }
     }
 
-    private static Element createSessionCreationResponse(HttpSession session,
+    private static String createSessionCreationResponse(HttpSession session,
                                                          ServerSurrogate serverSurrogate)
     {
-        Element element = DocumentHelper.createElement("body");
-        element.addAttribute("xmlns", "http://jabber.org/protocol/httpbind");
-        element.addAttribute("authID", session.getStreamID());
-        element.addAttribute("sid", session.getStreamID());
-        element.addAttribute("secure", "true");
-        element.addAttribute("requests", String.valueOf(maxRequests));
-        element.addAttribute("inactivity", String.valueOf(inactivityTimeout));
-        element.addAttribute("polling", String.valueOf(pollingInterval));
-        element.addAttribute("wait", String.valueOf(session.getWait()));
+        StringBuilder builder = new StringBuilder();
+        builder.append("<body")
+                .append(" xmlns='http://jabber.org/protocol/httpbind'").append(" authID='")
+                .append(session.getStreamID()).append("'")
+                .append(" sid='").append(session.getStreamID()).append("'")
+                .append(" secure='true" + "'").append(" requests='")
+                .append(String.valueOf(maxRequests)).append("'")
+                .append(" inactivity='").append(String.valueOf(inactivityTimeout)).append("'")
+                .append(" polling='").append(String.valueOf(pollingInterval)).append("'")
+                .append(" wait='").append(String.valueOf(session.getWait())).append("'")
+                .append(">");
+        builder.append("<stream:features>");
+        builder.append(serverSurrogate.getSASLMechanismsElement(session).asXML());
+        builder.append("</stream:features>");
+        builder.append("</body>");
 
-        Element features = element.addElement("stream:features");
-        features.appendContent(serverSurrogate.getSASLMechanismsElement(session));
-        return element;
+        return builder.toString();
     }
 }

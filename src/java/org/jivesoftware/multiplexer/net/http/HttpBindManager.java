@@ -25,11 +25,13 @@ public class HttpBindManager {
     private int plainPort;
     private int sslPort;
     private Server server;
+    private String serverName;
 
-    public HttpBindManager(int plainPort, int sslPort) {
+    public HttpBindManager(String serverName, int plainPort, int sslPort) {
         this.plainPort = plainPort;
         this.sslPort = sslPort;
         this.server = new Server();
+        this.serverName = serverName;
     }
 
     public void startup() throws Exception {
@@ -38,7 +40,7 @@ public class HttpBindManager {
         server.setConnectors(new Connector[]{connector});
 
         ServletHolder servletHolder = new ServletHolder(
-                new HttpBindServlet(new HttpSessionManager()));
+                new HttpBindServlet(new HttpSessionManager(serverName)));
         ServletHandler servletHandler = new ServletHandler();
         servletHandler.addServletWithMapping(servletHolder, "/");
         server.addHandler(servletHandler);

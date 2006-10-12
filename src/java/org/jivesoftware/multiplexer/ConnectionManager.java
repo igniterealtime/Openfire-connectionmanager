@@ -332,7 +332,7 @@ public class ConnectionManager {
 
         int plainPort = JiveGlobals.getIntProperty("xmpp.httpbind.port.plain", 8080);
         int sslPort = JiveGlobals.getIntProperty("xmpp.httpbind.port.secure", 8443);
-        httpBindManager = new HttpBindManager(plainPort, sslPort);
+        httpBindManager = new HttpBindManager(serverName, plainPort, sslPort);
 
         try {
             httpBindManager.startup();
