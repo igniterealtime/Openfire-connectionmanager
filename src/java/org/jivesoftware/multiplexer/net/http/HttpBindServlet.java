@@ -16,6 +16,7 @@ import org.dom4j.io.XMPPPacketReader;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
+import org.mortbay.util.ajax.ContinuationSupport;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -47,6 +48,9 @@ public class HttpBindServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        if(isContinuation(request, response)) {
+            return;
+        }
         Document document;
         try {
             document = createDocument(request);
@@ -76,6 +80,17 @@ public class HttpBindServlet extends HttpServlet {
         }
     }
 
+    private boolean isContinuation(HttpServletRequest request, HttpServletResponse response)
+            throws IOException
+    {
+        HttpConnection connection = (HttpConnection) request.getAttribute("request-connection");
+        if(connection == null) {
+            return false;
+        }
+        respond(response, connection);
+        return true;
+    }
+
     private void handleSessionRequest(String sid, HttpServletRequest request,
                                       HttpServletResponse response, Element rootNode)
             throws IOException
@@ -94,7 +109,10 @@ public class HttpBindServlet extends HttpServlet {
             return;
         }
         synchronized(session) {
-            sessionManager.forwardRequest(rid, session, rootNode);
+            HttpConnection connection = sessionManager.forwardRequest(rid, session, rootNode);
+            connection.setContinuation(ContinuationSupport.getContinuation(request, connection));
+            request.setAttribute("request-connection", connection);
+            respond(response, connection);
         }
     }
 
@@ -115,13 +133,24 @@ public class HttpBindServlet extends HttpServlet {
     private void respond(HttpServletResponse response, HttpConnection connection)
             throws IOException
     {
+        byte [] content;
+        try {
+            content = connection.getDeliverable().getBytes("utf-8");
+        }
+        catch (HttpBindTimeoutException e) {
+            content = createEmptyBody().getBytes("utf-8");
+        }
+
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType("text/xml");
         response.setCharacterEncoding("utf-8");
 
-        byte [] content = connection.getDeliverable().getBytes();
         response.setContentLength(content.length);
         response.getOutputStream().write(content);
+    }
+
+    private String createEmptyBody() {
+        return "<body xmlns='http://jabber.org/protocol/httpbind'/>";
     }
 
     private long getLongAttribue(String value, long defaultValue) {
@@ -139,15 +168,10 @@ public class HttpBindServlet extends HttpServlet {
     private Document createDocument(HttpServletRequest request) throws
             DocumentException, IOException, XmlPullParserException
     {
-        Document document = (Document) request.getAttribute("xml-document");
-        if (document == null) {
-            // Reader is associated with a new XMPPPacketReader
-            XMPPPacketReader reader = new XMPPPacketReader();
-            reader.setXPPFactory(factory);
+        // Reader is associated with a new XMPPPacketReader
+        XMPPPacketReader reader = new XMPPPacketReader();
+        reader.setXPPFactory(factory);
 
-            document = reader.read(request.getInputStream());
-            request.setAttribute("xml-document", document);
-        }
-        return document;
+        return reader.read(request.getInputStream());
     }
 }

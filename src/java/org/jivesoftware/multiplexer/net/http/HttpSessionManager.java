@@ -91,9 +91,15 @@ public class HttpSessionManager {
         HttpSession session = createSession(serverName);
         session.setWait(wait);
         session.setHold(hold);
+        session.setMaxPollingInterval(pollingInterval);
         // Store language and version information in the connection.
         session.setLanaguage(language);
-        connection.deliverBody(createSessionCreationResponse(session));
+        try {
+            connection.deliverBody(createSessionCreationResponse(session));
+        }
+        catch (HttpConnectionClosedException e) {
+            /* This won't happen here. */
+        }
 
         return session;
     }
@@ -145,12 +151,13 @@ public class HttpSessionManager {
     }
 
     public HttpConnection forwardRequest(long rid, HttpSession session, Element rootNode) {
-        HttpConnection connection = new HttpConnection(rid);
-        session.addConnection(connection);
-
         //noinspection unchecked
         List<Element> elements = rootNode.elements();
-        for(Element packet : elements) {
+        boolean isPoll = elements.size() <= 0;
+        HttpConnection connection = new HttpConnection(rid);
+        session.addConnection(connection, isPoll);
+
+        for (Element packet : elements) {
             serverSurrogate.send(packet, session.getStreamID());
         }
 

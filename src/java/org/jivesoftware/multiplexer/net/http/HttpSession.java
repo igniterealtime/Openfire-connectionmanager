@@ -10,27 +10,42 @@ package org.jivesoftware.multiplexer.net.http;
 
 import org.jivesoftware.multiplexer.*;
 import org.dom4j.Element;
+import org.dom4j.DocumentHelper;
 
-import java.util.Queue;
-import java.util.LinkedList;
+import java.util.*;
 
 /**
  *
  */
 public class HttpSession extends Session {
     private int wait;
-    private int hold;
+    private int hold = -1000;
     private String language;
     private final Queue<HttpConnection> connectionQueue = new LinkedList<HttpConnection>();
-    private String stanza;
+    private final List<Element> pendingElements = new ArrayList<Element>();
 
 
     public HttpSession(String serverName, String streamID) {
         super(serverName, null, streamID);
     }
 
-    void addConnection(HttpConnection connection) {
+    void addConnection(HttpConnection connection, boolean isPoll) {
+        if(connection == null) {
+            throw new IllegalArgumentException("Connection cannot be null.");
+        }
+
         connection.setSession(this);
+        if(pendingElements.size() > 0) {
+            createDeliverable(pendingElements);
+            pendingElements.clear();
+            return;
+        }
+        // With this connection we need to check if we will have too many connections open, closing
+        // any extras.
+        while(hold > 0 && connectionQueue.size() >= hold) {
+            HttpConnection toClose = connectionQueue.remove();
+            toClose.close();
+        }
         connectionQueue.offer(connection);
     }
 
@@ -45,7 +60,31 @@ public class HttpSession extends Session {
     }
 
     public synchronized void deliver(Element stanza) {
-        this.stanza = stanza.asXML();
+        String deliverable = createDeliverable(Arrays.asList(stanza));
+        boolean delivered = false;
+        while(!delivered && connectionQueue.size() > 0) {
+            HttpConnection connection = connectionQueue.remove();
+            try {
+                connection.deliverBody(deliverable);
+                delivered = true;
+            }
+            catch (HttpConnectionClosedException e) {
+                /* Connection was closed, try the next one */
+            }
+        }
+
+        if(!delivered) {
+            pendingElements.add(stanza);
+        }
+    }
+
+    private String createDeliverable(Collection<Element> elements) {
+        Element body = DocumentHelper.createElement("body");
+        body.addAttribute("xmlns", "http://jabber.org/protocol/httpbind");
+        for(Element child : elements) {
+            body.add(child);
+        }
+        return body.asXML();
     }
 
     /**
@@ -99,5 +138,16 @@ public class HttpSession extends Session {
 
     public void setLanaguage(String language) {
         this.language = language;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    /**
+     * Sets the max interval within which a client can send polling requests. If more than one
+     * @param pollingInterval
+     */
+    public void setMaxPollingInterval(int pollingInterval) {
     }
 }
