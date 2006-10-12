@@ -68,9 +68,10 @@ public class HttpConnection {
         if (continuation != null) {
             continuation.setObject(body);
             continuation.resume();
-            return;
         }
-        this.body = body;
+        else {
+            this.body = body;
+        }
     }
 
     /**

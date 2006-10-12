@@ -82,6 +82,8 @@ public class HttpSession extends Session {
         Element body = DocumentHelper.createElement("body");
         body.addAttribute("xmlns", "http://jabber.org/protocol/httpbind");
         for(Element child : elements) {
+            child = child.createCopy();
+            child.setParent(null);
             body.add(child);
         }
         return body.asXML();
