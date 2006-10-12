@@ -22,6 +22,7 @@ public class HttpSession extends Session {
     private int hold;
     private String language;
     private final Queue<HttpConnection> connectionQueue = new LinkedList<HttpConnection>();
+    private String stanza;
 
 
     public HttpSession(String serverName, String streamID) {
@@ -29,6 +30,7 @@ public class HttpSession extends Session {
     }
 
     void addConnection(HttpConnection connection) {
+        connection.setSession(this);
         connectionQueue.offer(connection);
     }
 
@@ -42,7 +44,8 @@ public class HttpSession extends Session {
     public void close(boolean isServerShuttingDown) {
     }
 
-    public void deliver(Element stanza) {
+    public synchronized void deliver(Element stanza) {
+        this.stanza = stanza.asXML();
     }
 
     /**

@@ -14,6 +14,8 @@ import org.jivesoftware.multiplexer.ConnectionManager;
 import org.jivesoftware.multiplexer.Session;
 import org.dom4j.Element;
 
+import java.util.List;
+
 /**
  *
  */
@@ -49,6 +51,7 @@ public class HttpSessionManager {
     private static int pollingInterval;
 
     private String serverName;
+    private ServerSurrogate serverSurrogate;
 
     static {
         // Set the default read idle timeout. If none was set then assume 30 minutes
@@ -59,6 +62,7 @@ public class HttpSessionManager {
 
     public HttpSessionManager(String serverName) {
         this.serverName = serverName;
+        this.serverSurrogate = ConnectionManager.getInstance().getServerSurrogate();
     }
 
     public HttpSession getSession(String streamID) {
@@ -81,7 +85,6 @@ public class HttpSessionManager {
         int wait = getIntAttribute(rootNode.attributeValue("wait"), 60);
         int hold = getIntAttribute(rootNode.attributeValue("hold"), 1);
 
-        ServerSurrogate serverSurrogate = ConnectionManager.getInstance().getServerSurrogate();
         // Indicate the compression policy to use for this connection
         connection.setCompressionPolicy(serverSurrogate.getCompressionPolicy());
 
@@ -90,7 +93,7 @@ public class HttpSessionManager {
         session.setHold(hold);
         // Store language and version information in the connection.
         session.setLanaguage(language);
-        connection.deliverBody(createSessionCreationResponse(session, serverSurrogate));
+        connection.deliverBody(createSessionCreationResponse(session));
 
         return session;
     }
@@ -119,9 +122,7 @@ public class HttpSessionManager {
         }
     }
 
-    private static String createSessionCreationResponse(HttpSession session,
-                                                         ServerSurrogate serverSurrogate)
-    {
+    private  String createSessionCreationResponse(HttpSession session) {
         StringBuilder builder = new StringBuilder();
         builder.append("<body")
                 .append(" xmlns='http://jabber.org/protocol/httpbind'").append(" authID='")
@@ -135,9 +136,24 @@ public class HttpSessionManager {
                 .append(">");
         builder.append("<stream:features>");
         builder.append(serverSurrogate.getSASLMechanismsElement(session).asXML());
+        builder.append("<bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\"/>");
+        builder.append("<session xmlns=\"urn:ietf:params:xml:ns:xmpp-session\"/>");
         builder.append("</stream:features>");
         builder.append("</body>");
 
         return builder.toString();
+    }
+
+    public HttpConnection forwardRequest(long rid, HttpSession session, Element rootNode) {
+        HttpConnection connection = new HttpConnection(rid);
+        session.addConnection(connection);
+
+        //noinspection unchecked
+        List<Element> elements = rootNode.elements();
+        for(Element packet : elements) {
+            serverSurrogate.send(packet, session.getStreamID());
+        }
+
+        return connection;
     }
 }

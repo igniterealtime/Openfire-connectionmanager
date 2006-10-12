@@ -69,15 +69,38 @@ public class HttpBindServlet extends HttpServlet {
         String sid = node.attributeValue("sid");
         // We have a new session
         if(sid == null) {
-            createNewSession(request, response, node);
+            createNewSession(response, node);
         }
         else {
-
+            handleSessionRequest(sid, request, response, node);
         }
     }
 
-    private void createNewSession(HttpServletRequest request, HttpServletResponse response,
-                                  Element rootNode) throws IOException {
+    private void handleSessionRequest(String sid, HttpServletRequest request,
+                                      HttpServletResponse response, Element rootNode)
+            throws IOException
+    {
+        long rid = getLongAttribue(rootNode.attributeValue("rid"), -1);
+        if(rid <= 0) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Body missing RID (Request ID)");
+            return;
+        }
+
+        HttpSession session = sessionManager.getSession(sid);
+        if(session == null) {
+            Log.warn("Client provided invalid session: " + sid + ". [" +
+                    request.getRemoteAddr() + "]");
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid SID.");
+            return;
+        }
+        synchronized(session) {
+            sessionManager.forwardRequest(rid, session, rootNode);
+        }
+    }
+
+    private void createNewSession(HttpServletResponse response, Element rootNode)
+            throws IOException
+    {
         long rid = getLongAttribue(rootNode.attributeValue("rid"), -1);
         if(rid <= 0) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Body missing RID (Request ID)");
