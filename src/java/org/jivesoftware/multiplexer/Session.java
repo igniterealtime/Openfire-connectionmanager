@@ -76,7 +76,7 @@ public abstract class Session {
         sessions.put(streamID, session);
     }
 
-    protected static void removeSession(String streamID) {
+    public static void removeSession(String streamID) {
         sessions.remove(streamID);
     }
 
@@ -191,4 +191,5 @@ public abstract class Session {
         return answer;
     }
 
+    public abstract boolean isClosed();
 }

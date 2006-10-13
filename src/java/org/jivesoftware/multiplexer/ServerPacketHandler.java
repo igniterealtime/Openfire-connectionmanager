@@ -124,7 +124,7 @@ class ServerPacketHandler {
         Element stanza = (Element) route.elementIterator().next();
         // Get the session that matches the requested stream ID
         Session session = Session.getSession(streamID);
-        if (session != null) {
+        if (session != null && !session.isClosed()) {
             // Deliver the wrapped stanza to the client
             session.deliver(stanza);
         }

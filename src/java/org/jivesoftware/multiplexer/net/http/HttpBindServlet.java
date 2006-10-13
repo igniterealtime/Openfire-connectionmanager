@@ -51,7 +51,8 @@ public class HttpBindServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws ServletException, IOException
+    {
         if (isContinuation(request, response)) {
             return;
         }
@@ -77,7 +78,7 @@ public class HttpBindServlet extends HttpServlet {
         String sid = node.attributeValue("sid");
         // We have a new session
         if (sid == null) {
-            createNewSession(response, node);
+            createNewSession(request, response, node);
         }
         else {
             handleSessionRequest(sid, request, response, node);
@@ -85,7 +86,8 @@ public class HttpBindServlet extends HttpServlet {
     }
 
     private boolean isContinuation(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
+            throws IOException
+    {
         HttpConnection connection = (HttpConnection) request.getAttribute("request-connection");
         if (connection == null) {
             return false;
@@ -96,7 +98,8 @@ public class HttpBindServlet extends HttpServlet {
 
     private void handleSessionRequest(String sid, HttpServletRequest request,
                                       HttpServletResponse response, Element rootNode)
-            throws IOException {
+            throws IOException
+    {
         long rid = getLongAttribue(rootNode.attributeValue("rid"), -1);
         if (rid <= 0) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Body missing RID (Request ID)");
@@ -111,28 +114,42 @@ public class HttpBindServlet extends HttpServlet {
             return;
         }
         synchronized (session) {
-            HttpConnection connection = sessionManager.forwardRequest(rid, session, rootNode);
+            HttpConnection connection;
+            try {
+                connection = sessionManager.forwardRequest(rid, session,
+                        request.isSecure(),  rootNode);
+            }
+            catch (HttpBindException e) {
+                response.sendError(e.getHttpError(), e.getMessage());
+                if(e.shouldCloseSession()) {
+                    session.close();
+                }
+                return;
+            }
             connection.setContinuation(ContinuationSupport.getContinuation(request, connection));
             request.setAttribute("request-connection", connection);
             respond(response, connection);
         }
     }
 
-    private void createNewSession(HttpServletResponse response, Element rootNode)
-            throws IOException {
+    private void createNewSession(HttpServletRequest request, HttpServletResponse response,
+                                  Element rootNode)
+            throws IOException
+    {
         long rid = getLongAttribue(rootNode.attributeValue("rid"), -1);
         if (rid <= 0) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Body missing RID (Request ID)");
             return;
         }
 
-        HttpConnection connection = new HttpConnection(rid);
+        HttpConnection connection = new HttpConnection(rid, request.isSecure());
         connection.setSession(sessionManager.createSession(rootNode, connection));
         respond(response, connection);
     }
 
     private void respond(HttpServletResponse response, HttpConnection connection)
-            throws IOException {
+            throws IOException
+    {
         byte[] content;
         try {
             content = connection.getDeliverable().getBytes("utf-8");

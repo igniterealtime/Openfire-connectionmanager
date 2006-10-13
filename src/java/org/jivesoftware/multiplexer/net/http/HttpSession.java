@@ -11,6 +11,7 @@
 package org.jivesoftware.multiplexer.net.http;
 
 import org.jivesoftware.multiplexer.*;
+import org.jivesoftware.multiplexer.spi.ClientFailoverDeliverer;
 import org.dom4j.Element;
 import org.dom4j.DocumentHelper;
 
@@ -31,15 +32,29 @@ public class HttpSession extends Session {
     private String language;
     private final Queue<HttpConnection> connectionQueue = new LinkedList<HttpConnection>();
     private final List<Element> pendingElements = new ArrayList<Element>();
-
+    private boolean isSecure;
+    private int maxPollingInterval;
+    private long lastPoll = -1;
+    private Set<SessionCloseListener> listeners = new HashSet<SessionCloseListener>();
+    private boolean isClosed;
+    private int inactivityTimeout;
 
     protected HttpSession(String serverName, String streamID) {
         super(serverName, null, streamID);
     }
 
-    void addConnection(HttpConnection connection, boolean isPoll) {
+    void addConnection(HttpConnection connection, boolean isPoll) throws HttpBindException {
         if(connection == null) {
             throw new IllegalArgumentException("Connection cannot be null.");
+        }
+
+        if(isPoll) {
+            checkPollingInterval();
+        }
+
+        if(isSecure && !connection.isSecure()) {
+            throw new HttpBindException("Session was started from secure connection, all " +
+                    "connections on this session must be secured.", false, 403);
         }
 
         connection.setSession(this);
@@ -57,14 +72,51 @@ public class HttpSession extends Session {
         connectionQueue.offer(connection);
     }
 
+    private void checkPollingInterval() throws HttpBindException {
+        long time = System.currentTimeMillis();
+        if(lastPoll > 0  && ((lastPoll - time) / 1000) < maxPollingInterval) {
+            throw new HttpBindException("Too frequent polling", true, 403);
+        }
+        lastPoll = time;
+    }
+
     public String getAvailableStreamFeatures() {
         return null;
     }
 
-    public void close() {
+    public synchronized void close() {
+        close(false);
     }
 
-    public void close(boolean isServerShuttingDown) {
+    public synchronized void close(boolean isServerShuttingDown) {
+        if(isClosed) {
+            return;
+        }
+        isClosed = true;
+
+        if(pendingElements.size() > 0) {
+            failDelivery();
+        }
+
+        Collection<SessionCloseListener> listeners =
+                new HashSet<SessionCloseListener>(this.listeners);
+        this.listeners.clear();
+        for(SessionCloseListener listener : listeners) {
+            listener.sessionClosed(this);
+        }
+    }
+
+    private void failDelivery() {
+        ClientFailoverDeliverer deliverer = new ClientFailoverDeliverer();
+        deliverer.setStreamID(getStreamID());
+        for(Element element : pendingElements) {
+            deliverer.deliver(element);
+        }
+        pendingElements.clear();
+    }
+
+    public synchronized boolean isClosed() {
+        return isClosed;
     }
 
     public synchronized void deliver(Element stanza) {
@@ -158,9 +210,46 @@ public class HttpSession extends Session {
      * Sets the max interval within which a client can send polling requests. If more than one
      * request occurs in the interval the session will be terminated.
      *
-     * @param pollingInterval time in seconds a client needs to wait before sending polls to the
+     * @param maxPollingInterval time in seconds a client needs to wait before sending polls to the
      * server, a negative <i>int</i> indicates that there is no limit.
      */
-    public void setMaxPollingInterval(int pollingInterval) {
+    public void setMaxPollingInterval(int maxPollingInterval) {
+        this.maxPollingInterval = maxPollingInterval;
+    }
+
+    /**
+     * Sets whether the initial request on the session was secure.
+     *
+     * @param isSecure true if the initial request was secure and false if it wasn't.
+     */
+    protected void setSecure(boolean isSecure) {
+        this.isSecure = isSecure;
+    }
+
+    /**
+     * Returns true if all connections on this session should be secured, and false if
+     * they should not.
+     *
+     * @return true if all connections on this session should be secured, and false if
+     * they should not.
+     */
+    public boolean isSecure() {
+        return isSecure;
+    }
+
+    public void addSessionCloseListener(SessionCloseListener listener) {
+        listeners.add(listener);
+    }
+
+    public void removeSessionCloseListener(SessionCloseListener listener) {
+        listeners.remove(listener);
+    }
+
+    public void setInactivityTimeout(int inactivityTimeout) {
+        this.inactivityTimeout = inactivityTimeout;
+    }
+
+    public int getInactivityTimeout() {
+        return inactivityTimeout;
     }
 }

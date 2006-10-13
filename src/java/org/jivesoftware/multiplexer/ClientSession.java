@@ -299,4 +299,8 @@ public class ClientSession extends Session {
             ConnectionManager.getInstance().getServerSurrogate().clientSessionClosed(getStreamID());
         }
     }
+
+    public boolean isClosed() {
+        return status == STATUS_CLOSED;
+    }
 }

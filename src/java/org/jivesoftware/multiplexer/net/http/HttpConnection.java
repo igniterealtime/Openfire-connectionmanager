@@ -25,9 +25,11 @@ public class HttpConnection {
     private HttpSession session;
     private Continuation continuation;
     private boolean isClosed;
+    private boolean isSecure = false;
 
-    public HttpConnection(long requestID) {
-        this.requestId = requestID;
+    public HttpConnection(long requestId, boolean isSecure) {
+        this.requestId = requestId;
+        this.isSecure = isSecure;
     }
 
     public boolean validate() {
@@ -55,7 +57,7 @@ public class HttpConnection {
     }
 
     public boolean isSecure() {
-        return false;
+        return isSecure;
     }
 
     /**

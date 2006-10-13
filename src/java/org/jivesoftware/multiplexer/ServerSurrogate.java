@@ -156,7 +156,7 @@ public class ServerSurrogate {
      *
      * @param streamID the stream ID assigned by the connection manager to the session.
      */
-    void clientSessionClosed(final String streamID) {
+    public void clientSessionClosed(final String streamID) {
         threadPool.execute(new CloseSessionTask(streamID));
     }
 

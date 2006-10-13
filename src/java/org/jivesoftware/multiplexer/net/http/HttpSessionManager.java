@@ -16,7 +16,7 @@ import org.jivesoftware.multiplexer.ConnectionManager;
 import org.jivesoftware.multiplexer.Session;
 import org.dom4j.Element;
 
-import java.util.List;
+import java.util.*;
 
 /**
  *
@@ -31,7 +31,7 @@ public class HttpSessionManager {
      * the thread is blocked while sending data (because the socket is closed) then the clean up
      * thread will close the socket anyway.
      */
-    private static long inactivityTimeout;
+    private static int inactivityTimeout;
 
     /**
      * The connection manager MAY limit the number of simultaneous requests the client makes with
@@ -54,6 +54,7 @@ public class HttpSessionManager {
 
     private String serverName;
     private ServerSurrogate serverSurrogate;
+    private InactivityTimer timer = new InactivityTimer();
 
     static {
         // Set the default read idle timeout. If none was set then assume 30 minutes
@@ -93,7 +94,9 @@ public class HttpSessionManager {
         HttpSession session = createSession(serverName);
         session.setWait(wait);
         session.setHold(hold);
+        session.setSecure(connection.isSecure());
         session.setMaxPollingInterval(pollingInterval);
+        session.setInactivityTimeout(inactivityTimeout);
         // Store language and version information in the connection.
         session.setLanaguage(language);
         try {
@@ -103,11 +106,11 @@ public class HttpSessionManager {
             /* This won't happen here. */
         }
 
+        timer.reset(session);
         return session;
     }
 
     private HttpSession createSession(String serverName) {
-        ServerSurrogate serverSurrogate = ConnectionManager.getInstance().getServerSurrogate();
         // Create a ClientSession for this user.
         String streamID = Session.idFactory.createStreamID();
         HttpSession session = new HttpSession(serverName, streamID);
@@ -115,6 +118,12 @@ public class HttpSessionManager {
         HttpSession.addSession(streamID, session);
         // Send to the server that a new client session has been created
         serverSurrogate.clientSessionCreated(streamID);
+        session.addSessionCloseListener(new SessionCloseListener() {
+            public void sessionClosed(Session session) {
+                HttpSession.removeSession(session.getStreamID());
+                serverSurrogate.clientSessionClosed(session.getStreamID());
+            }
+        });
         return session;
     }
 
@@ -130,7 +139,7 @@ public class HttpSessionManager {
         }
     }
 
-    private  String createSessionCreationResponse(HttpSession session) {
+    private String createSessionCreationResponse(HttpSession session) {
         StringBuilder builder = new StringBuilder();
         builder.append("<body")
                 .append(" xmlns='http://jabber.org/protocol/httpbind'").append(" authID='")
@@ -138,7 +147,8 @@ public class HttpSessionManager {
                 .append(" sid='").append(session.getStreamID()).append("'")
                 .append(" secure='true" + "'").append(" requests='")
                 .append(String.valueOf(maxRequests)).append("'")
-                .append(" inactivity='").append(String.valueOf(inactivityTimeout)).append("'")
+                .append(" inactivity='").append(String.valueOf(session.getInactivityTimeout()))
+                .append("'")
                 .append(" polling='").append(String.valueOf(pollingInterval)).append("'")
                 .append(" wait='").append(String.valueOf(session.getWait())).append("'")
                 .append(">");
@@ -152,11 +162,15 @@ public class HttpSessionManager {
         return builder.toString();
     }
 
-    public HttpConnection forwardRequest(long rid, HttpSession session, Element rootNode) {
+    public HttpConnection forwardRequest(long rid, HttpSession session, boolean isSecure,
+                                         Element rootNode) throws HttpBindException
+    {
+        timer.reset(session);
+
         //noinspection unchecked
         List<Element> elements = rootNode.elements();
         boolean isPoll = elements.size() <= 0;
-        HttpConnection connection = new HttpConnection(rid);
+        HttpConnection connection = new HttpConnection(rid, isSecure);
         session.addConnection(connection, isPoll);
 
         for (Element packet : elements) {
@@ -164,5 +178,41 @@ public class HttpSessionManager {
         }
 
         return connection;
+    }
+
+    private class InactivityTimer extends Timer {
+        private Map<String, InactivityTimeoutTask> sessionMap
+                = new HashMap<String, InactivityTimeoutTask>();
+
+        public void reset(HttpSession session) {
+            InactivityTimeoutTask task = sessionMap.remove(session.getStreamID());
+            if(task != null) {
+                session.removeSessionCloseListener(task);
+                task.cancel();
+            }
+            if(session.isClosed()) {
+                return;
+            }
+            task = new InactivityTimeoutTask(session);
+            schedule(task, session.getInactivityTimeout() * 1000);
+            session.addSessionCloseListener(task);
+            sessionMap.put(session.getStreamID(), task);
+        }
+    }
+
+    private class InactivityTimeoutTask extends TimerTask implements SessionCloseListener {
+        private Session session;
+
+        public InactivityTimeoutTask(Session session) {
+            this.session = session;
+        }
+
+        public void run() {
+            session.close();
+        }
+
+        public void sessionClosed(Session session) {
+            this.cancel();
+        }
     }
 }
