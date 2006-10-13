@@ -1,10 +1,12 @@
 /**
- * $RCSfile:  $
- * $Revision:  $
- * $Date:  $
+ * $RCSfile$
+ * $Revision: $
+ * $Date: $
  *
  * Copyright (C) 2006 Jive Software. All rights reserved.
- * This software is the proprietary information of Jive Software. Use is subject to license terms.
+ *
+ * This software is published under the terms of the GNU Public License (GPL),
+ * a copy of which is included in this distribution.
  */
 package org.jivesoftware.multiplexer.net.http;
 
@@ -25,7 +27,9 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 
 /**
+ * Handles requests to the HTTP Bind service.
  *
+ * @author Alexander Wenckus
  */
 public class HttpBindServlet extends HttpServlet {
     private HttpSessionManager sessionManager;
@@ -41,14 +45,14 @@ public class HttpBindServlet extends HttpServlet {
         }
     }
 
-    public HttpBindServlet(HttpSessionManager sessionManager) {
+    HttpBindServlet(HttpSessionManager sessionManager) {
         this.sessionManager = sessionManager;
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        if(isContinuation(request, response)) {
+        if (isContinuation(request, response)) {
             return;
         }
         Document document;
@@ -63,7 +67,7 @@ public class HttpBindServlet extends HttpServlet {
         }
 
         Element node = document.getRootElement();
-        if(node == null || !"body".equals(node.getName())) {
+        if (node == null || !"body".equals(node.getName())) {
             Log.warn("Body missing from request content. [" + request.getRemoteAddr() + "]");
             response.sendError(HttpServletResponse.SC_BAD_REQUEST,
                     "Body missing from request content.");
@@ -72,7 +76,7 @@ public class HttpBindServlet extends HttpServlet {
 
         String sid = node.attributeValue("sid");
         // We have a new session
-        if(sid == null) {
+        if (sid == null) {
             createNewSession(response, node);
         }
         else {
@@ -81,10 +85,9 @@ public class HttpBindServlet extends HttpServlet {
     }
 
     private boolean isContinuation(HttpServletRequest request, HttpServletResponse response)
-            throws IOException
-    {
+            throws IOException {
         HttpConnection connection = (HttpConnection) request.getAttribute("request-connection");
-        if(connection == null) {
+        if (connection == null) {
             return false;
         }
         respond(response, connection);
@@ -93,22 +96,21 @@ public class HttpBindServlet extends HttpServlet {
 
     private void handleSessionRequest(String sid, HttpServletRequest request,
                                       HttpServletResponse response, Element rootNode)
-            throws IOException
-    {
+            throws IOException {
         long rid = getLongAttribue(rootNode.attributeValue("rid"), -1);
-        if(rid <= 0) {
+        if (rid <= 0) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Body missing RID (Request ID)");
             return;
         }
 
         HttpSession session = sessionManager.getSession(sid);
-        if(session == null) {
+        if (session == null) {
             Log.warn("Client provided invalid session: " + sid + ". [" +
                     request.getRemoteAddr() + "]");
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid SID.");
             return;
         }
-        synchronized(session) {
+        synchronized (session) {
             HttpConnection connection = sessionManager.forwardRequest(rid, session, rootNode);
             connection.setContinuation(ContinuationSupport.getContinuation(request, connection));
             request.setAttribute("request-connection", connection);
@@ -117,10 +119,9 @@ public class HttpBindServlet extends HttpServlet {
     }
 
     private void createNewSession(HttpServletResponse response, Element rootNode)
-            throws IOException
-    {
+            throws IOException {
         long rid = getLongAttribue(rootNode.attributeValue("rid"), -1);
-        if(rid <= 0) {
+        if (rid <= 0) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Body missing RID (Request ID)");
             return;
         }
@@ -131,9 +132,8 @@ public class HttpBindServlet extends HttpServlet {
     }
 
     private void respond(HttpServletResponse response, HttpConnection connection)
-            throws IOException
-    {
-        byte [] content;
+            throws IOException {
+        byte[] content;
         try {
             content = connection.getDeliverable().getBytes("utf-8");
         }
@@ -154,7 +154,7 @@ public class HttpBindServlet extends HttpServlet {
     }
 
     private long getLongAttribue(String value, long defaultValue) {
-        if(value == null || "".equals(value)) {
+        if (value == null || "".equals(value)) {
             return defaultValue;
         }
         try {
@@ -166,8 +166,7 @@ public class HttpBindServlet extends HttpServlet {
     }
 
     private Document createDocument(HttpServletRequest request) throws
-            DocumentException, IOException, XmlPullParserException
-    {
+            DocumentException, IOException, XmlPullParserException {
         // Reader is associated with a new XMPPPacketReader
         XMPPPacketReader reader = new XMPPPacketReader();
         reader.setXPPFactory(factory);

@@ -1,10 +1,12 @@
 /**
- * $RCSfile:  $
- * $Revision:  $
- * $Date:  $
+ * $RCSfile$
+ * $Revision: $
+ * $Date: $
  *
  * Copyright (C) 2006 Jive Software. All rights reserved.
- * This software is the proprietary information of Jive Software. Use is subject to license terms.
+ *
+ * This software is published under the terms of the GNU Public License (GPL),
+ * a copy of which is included in this distribution.
  */
 package org.jivesoftware.multiplexer.net.http;
 
@@ -16,7 +18,7 @@ import org.mortbay.jetty.nio.SelectChannelConnector;
 
 /**
  * Manages connections to the server which use the HTTP Bind protocol specified in
- * <a href="http://www.xmpp.org/extensions/xep-0124.html">XEP-0124</a>. The manager maps a servlet
+ * <a href="http://www.xmpp.org/extensions/xep-0124.html">XEP-0124</a>. The manager maps a servlet 
  * to an embedded servlet container using the ports provided in the constructor.
  *
  * @author Alexander Wenckus
@@ -34,6 +36,11 @@ public class HttpBindManager {
         this.serverName = serverName;
     }
 
+    /**
+     * Starts the HTTP Bind service.
+     *
+     * @throws Exception if there is an error starting up the server.
+     */
     public void startup() throws Exception {
         SelectChannelConnector connector = new SelectChannelConnector();
         connector.setPort(plainPort);
@@ -48,6 +55,11 @@ public class HttpBindManager {
         server.start();
     }
 
+    /**
+     * Shutdown the HTTP Bind service, freeing any related resources.
+     *
+     * @throws Exception if there is an error shutting down the service.
+     */
     public void shutdown() throws Exception {
         server.stop();
     }

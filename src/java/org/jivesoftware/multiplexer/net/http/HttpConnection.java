@@ -13,7 +13,10 @@ import org.mortbay.util.ajax.Continuation;
 
 
 /**
+ * A connection to a client. The client will wait on getDeliverable() until the server forwards a
+ * message to it or the wait time on the session timesout.
  *
+ * @author Alexander Wenckus
  */
 public class HttpConnection {
     private Connection.CompressionPolicy compressionPolicy;
@@ -35,7 +38,7 @@ public class HttpConnection {
      * The connection should be closed without delivering a stanza to the requestor.
      */
     public void close() {
-        if(isClosed) {
+        if (isClosed) {
             return;
         }
 
@@ -55,9 +58,19 @@ public class HttpConnection {
         return false;
     }
 
+    /**
+     * Delivers content to the client. The content should be valid XMPP wrapped inside of a body.
+     * A <i>null</i> value for body indicates that the connection should be closed and the client
+     * sent an empty body.
+     *
+     * @param body the XMPP content to be forwarded to the client inside of a body tag.
+     *
+     * @throws HttpConnectionClosedException when this connection to the client has already recieved
+     * a deliverable to forward to the client
+     */
     public void deliverBody(String body) throws HttpConnectionClosedException {
         // We only want to use this function once so we will close it when the body is delivered.
-        if(isClosed) {
+        if (isClosed) {
             throw new HttpConnectionClosedException("The http connection is no longer " +
                     "available to deliver content");
         }
@@ -75,13 +88,13 @@ public class HttpConnection {
     }
 
     /**
-     * A call that will cause a wait, or in the case of Jetty the thread to be freed, if there
-     * is no deliverable currently available. Once the deliverable becomes available it is returned.
+     * A call that will cause a wait, or in the case of Jetty the thread to be freed, if there is no
+     * deliverable currently available. Once the deliverable becomes available it is returned.
      *
      * @return the deliverable to send to the client
+     *
      * @throws HttpBindTimeoutException to indicate that the maximum wait time requested by the
-     * client
-     * has been surpassed and an empty response should be returned.
+     * client has been surpassed and an empty response should be returned.
      */
     public String getDeliverable() throws HttpBindTimeoutException {
         if (body == null && continuation != null) {
@@ -94,10 +107,10 @@ public class HttpConnection {
     }
 
     private String waitForDeliverable() throws HttpBindTimeoutException {
-        if(continuation.suspend(session.getWait() * 1000)) {
+        if (continuation.suspend(session.getWait() * 1000)) {
             String deliverable = (String) continuation.getObject();
             // This will occur when the hold attribute of a session has been exceded.
-            if(deliverable == null) {
+            if (deliverable == null) {
                 throw new HttpBindTimeoutException();
             }
             return deliverable;

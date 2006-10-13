@@ -1,10 +1,12 @@
 /**
- * $RCSfile:  $
- * $Revision:  $
- * $Date:  $
+ * $RCSfile$
+ * $Revision: $
+ * $Date: $
  *
  * Copyright (C) 2006 Jive Software. All rights reserved.
- * This software is the proprietary information of Jive Software. Use is subject to license terms.
+ *
+ * This software is published under the terms of the GNU Public License (GPL),
+ * a copy of which is included in this distribution.
  */
 package org.jivesoftware.multiplexer.net.http;
 
@@ -15,7 +17,13 @@ import org.dom4j.DocumentHelper;
 import java.util.*;
 
 /**
+ * A session represents a serious of interactions with an XMPP client sending packets using the HTTP
+ * Binding protocol specified in
+ * <a href="http://www.xmpp.org/extensions/xep-0124.html">XEP-0124</a>. A session can have several
+ * client connections open simultaneously while awaiting packets bound for the client from the
+ * server.
  *
+ * @author Alexander Wenckus
  */
 public class HttpSession extends Session {
     private int wait;
@@ -25,7 +33,7 @@ public class HttpSession extends Session {
     private final List<Element> pendingElements = new ArrayList<Element>();
 
 
-    public HttpSession(String serverName, String streamID) {
+    protected HttpSession(String serverName, String streamID) {
         super(serverName, null, streamID);
     }
 
@@ -148,7 +156,10 @@ public class HttpSession extends Session {
 
     /**
      * Sets the max interval within which a client can send polling requests. If more than one
-     * @param pollingInterval
+     * request occurs in the interval the session will be terminated.
+     *
+     * @param pollingInterval time in seconds a client needs to wait before sending polls to the
+     * server, a negative <i>int</i> indicates that there is no limit.
      */
     public void setMaxPollingInterval(int pollingInterval) {
     }
