@@ -339,7 +339,7 @@ public class ConnectionManager {
         }
         catch (Exception e) {
             httpBindManager = null;
-            System.err.println("Error starting http bind servlet " + plainPort + "and" + sslPort
+            System.err.println("Error starting http bind servlet " + plainPort + " and " + sslPort
                     + ": " + e.getMessage());
             Log.error(LocaleUtils.getLocalizedString("admin.error.http.bind"), e);
         }

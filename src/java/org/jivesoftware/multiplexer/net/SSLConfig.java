@@ -38,13 +38,14 @@ public class SSLConfig {
     private static String trustpass;
     private static String keyStoreLocation;
     private static String trustStoreLocation;
+    private static String storeType;
 
     private SSLConfig() {
     }
 
     static {
         String algorithm = JiveGlobals.getXMLProperty("xmpp.socket.ssl.algorithm", "TLS");
-        String storeType = JiveGlobals.getXMLProperty("xmpp.socket.ssl.storeType", "jks");
+        storeType = JiveGlobals.getXMLProperty("xmpp.socket.ssl.storeType", "jks");
 
         // Get the keystore location. The default location is security/keystore
         keyStoreLocation = JiveGlobals.getXMLProperty("xmpp.socket.ssl.keystore",
@@ -152,5 +153,21 @@ public class SSLConfig {
         else {
             return sslFactory.createServerSocket(port, -1, ifAddress);
         }
+    }
+
+    public static String getKeystoreLocation() {
+        return keyStoreLocation;
+    }
+
+    public static String getTruststoreLocation() {
+        return trustStoreLocation;
+    }
+
+    public static String getStoreType() {
+        return storeType;
+    }
+
+    public static SSLJiveServerSocketFactory getServerSocketFactory() {
+        return sslFactory;
     }
 }

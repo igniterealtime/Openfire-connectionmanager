@@ -12,14 +12,20 @@ package org.jivesoftware.multiplexer.net.http;
 
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.Connector;
+import org.mortbay.jetty.Handler;
+import org.mortbay.jetty.security.SslSocketConnector;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.jetty.servlet.ServletHandler;
 import org.mortbay.jetty.nio.SelectChannelConnector;
+import org.jivesoftware.multiplexer.net.SSLConfig;
+import org.jivesoftware.util.Log;
+
+import javax.net.ssl.SSLServerSocketFactory;
 
 /**
- * Manages connections to the server which use the HTTP Bind protocol specified in
- * <a href="http://www.xmpp.org/extensions/xep-0124.html">XEP-0124</a>. The manager maps a servlet 
- * to an embedded servlet container using the ports provided in the constructor.
+ * Manages connections to the server which use the HTTP Bind protocol specified in <a
+ * href="http://www.xmpp.org/extensions/xep-0124.html">XEP-0124</a>. The manager maps a servlet to
+ * an embedded servlet container using the ports provided in the constructor.
  *
  * @author Alexander Wenckus
  */
@@ -42,17 +48,49 @@ public class HttpBindManager {
      * @throws Exception if there is an error starting up the server.
      */
     public void startup() throws Exception {
-        SelectChannelConnector connector = new SelectChannelConnector();
-        connector.setPort(plainPort);
-        server.setConnectors(new Connector[]{connector});
+        for(Connector connector : createConnectors()) {
+            server.addConnector(connector);
+        }
+        server.addHandler(createServletHandler());
 
+        server.start();
+    }
+
+    private Handler createServletHandler() {
         ServletHolder servletHolder = new ServletHolder(
                 new HttpBindServlet(new HttpSessionManager(serverName)));
         ServletHandler servletHandler = new ServletHandler();
         servletHandler.addServletWithMapping(servletHolder, "/");
-        server.addHandler(servletHandler);
+        return servletHandler;
+    }
 
-        server.start();
+    private Connector[] createConnectors() {
+        SelectChannelConnector connector = new SelectChannelConnector();
+        connector.setPort(plainPort);
+
+        if (sslPort > 0) {
+            try {
+                SslSocketConnector secureConnector = new JiveSslConnector();
+                secureConnector.setPort(sslPort);
+
+                secureConnector.setTrustPassword(SSLConfig.getTrustPassword());
+                secureConnector.setTruststoreType(SSLConfig.getStoreType());
+                secureConnector.setTruststore(SSLConfig.getTruststoreLocation());
+                secureConnector.setNeedClientAuth(false);
+                secureConnector.setWantClientAuth(false);
+
+                secureConnector.setKeyPassword(SSLConfig.getKeyPassword());
+                secureConnector.setKeystoreType(SSLConfig.getStoreType());
+                secureConnector.setKeystore(SSLConfig.getKeystoreLocation());
+                
+                return new Connector[]{connector, secureConnector};
+            }
+            catch (Exception ex) {
+                Log.error("Error establishing SSL connector for HTTP Bind", ex);
+            }
+        }
+
+        return new Connector[]{connector};
     }
 
     /**
@@ -62,5 +100,13 @@ public class HttpBindManager {
      */
     public void shutdown() throws Exception {
         server.stop();
+    }
+
+    private class JiveSslConnector extends SslSocketConnector {
+
+        @Override
+        protected SSLServerSocketFactory createFactory() throws Exception {
+            return SSLConfig.getServerSocketFactory();
+        }
     }
 }
