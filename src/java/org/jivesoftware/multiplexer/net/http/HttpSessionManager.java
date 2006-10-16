@@ -136,6 +136,9 @@ public class HttpSessionManager {
 
             public void sessionClosed(Session session) {
                 HttpSession.removeSession(session.getStreamID());
+                if(session instanceof HttpSession) {
+                    timer.stop((HttpSession) session);
+                }
                 serverSurrogate.clientSessionClosed(session.getStreamID());
             }
         });
@@ -202,7 +205,6 @@ public class HttpSessionManager {
         public void stop(HttpSession session) {
             InactivityTimeoutTask task = sessionMap.remove(session.getStreamID());
             if(task != null) {
-                session.removeSessionCloseListener(task);
                 task.cancel();
             }
         }
@@ -214,12 +216,11 @@ public class HttpSessionManager {
             }
             InactivityTimeoutTask task = new InactivityTimeoutTask(session);
             schedule(task, session.getInactivityTimeout() * 1000);
-            session.addSessionCloseListener(task);
             sessionMap.put(session.getStreamID(), task);
         }
     }
 
-    private class InactivityTimeoutTask extends TimerTask implements SessionListener {
+    private class InactivityTimeoutTask extends TimerTask {
         private Session session;
 
         public InactivityTimeoutTask(Session session) {
@@ -228,16 +229,6 @@ public class HttpSessionManager {
 
         public void run() {
             session.close();
-        }
-
-        public void connectionOpened(Session session, HttpConnection connection) {
-        }
-
-        public void connectionClosed(Session session, HttpConnection connection) {
-        }
-
-        public void sessionClosed(Session session) {
-            this.cancel();
         }
     }
 }

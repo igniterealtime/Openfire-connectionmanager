@@ -126,6 +126,10 @@ public class HttpBindServlet extends HttpServlet {
                 }
                 return;
             }
+            catch (HttpConnectionClosedException nc) {
+                Log.error("Error sending packet to client.", nc);
+                return;
+            }
             connection.setContinuation(ContinuationSupport.getContinuation(request, connection));
             request.setAttribute("request-connection", connection);
             respond(response, connection);
