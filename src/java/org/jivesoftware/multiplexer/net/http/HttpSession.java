@@ -35,7 +35,7 @@ public class HttpSession extends Session {
     private boolean isSecure;
     private int maxPollingInterval;
     private long lastPoll = -1;
-    private Set<SessionCloseListener> listeners = new HashSet<SessionCloseListener>();
+    private Set<SessionListener> listeners = new HashSet<SessionListener>();
     private boolean isClosed;
     private int inactivityTimeout;
 
@@ -43,7 +43,9 @@ public class HttpSession extends Session {
         super(serverName, null, streamID);
     }
 
-    void addConnection(HttpConnection connection, boolean isPoll) throws HttpBindException {
+    void addConnection(HttpConnection connection, boolean isPoll) throws HttpBindException,
+            HttpConnectionClosedException
+    {
         if(connection == null) {
             throw new IllegalArgumentException("Connection cannot be null.");
         }
@@ -58,18 +60,32 @@ public class HttpSession extends Session {
         }
 
         connection.setSession(this);
-        if(pendingElements.size() > 0) {
-            createDeliverable(pendingElements);
+        if (pendingElements.size() > 0) {
+            String deliverable = createDeliverable(pendingElements);
             pendingElements.clear();
-            return;
+            fireConnectionOpened(connection);
+            connection.deliverBody(deliverable);
+            fireConnectionClosed(connection);
         }
-        // With this connection we need to check if we will have too many connections open, closing
-        // any extras.
-        while(hold > 0 && connectionQueue.size() >= hold) {
-            HttpConnection toClose = connectionQueue.remove();
-            toClose.close();
+        else {
+            // With this connection we need to check if we will have too many connections open,
+            // closing any extras.
+            while (hold > 0 && connectionQueue.size() >= hold) {
+                HttpConnection toClose = connectionQueue.remove();
+                toClose.close();
+                fireConnectionClosed(toClose);
+            }
+            connectionQueue.offer(connection);
+            fireConnectionOpened(connection);
         }
-        connectionQueue.offer(connection);
+    }
+
+    private void fireConnectionOpened(HttpConnection connection) {
+        Collection<SessionListener> listeners =
+                new HashSet<SessionListener>(this.listeners);
+        for(SessionListener listener : listeners) {
+            listener.connectionOpened(this, connection);
+        }
     }
 
     private void checkPollingInterval() throws HttpBindException {
@@ -98,10 +114,10 @@ public class HttpSession extends Session {
             failDelivery();
         }
 
-        Collection<SessionCloseListener> listeners =
-                new HashSet<SessionCloseListener>(this.listeners);
+        Collection<SessionListener> listeners =
+                new HashSet<SessionListener>(this.listeners);
         this.listeners.clear();
-        for(SessionCloseListener listener : listeners) {
+        for(SessionListener listener : listeners) {
             listener.sessionClosed(this);
         }
     }
@@ -127,6 +143,7 @@ public class HttpSession extends Session {
             try {
                 connection.deliverBody(deliverable);
                 delivered = true;
+                fireConnectionClosed(connection);
             }
             catch (HttpConnectionClosedException e) {
                 /* Connection was closed, try the next one */
@@ -135,6 +152,14 @@ public class HttpSession extends Session {
 
         if(!delivered) {
             pendingElements.add(stanza);
+        }
+    }
+
+    private void fireConnectionClosed(HttpConnection connection) {
+        Collection<SessionListener> listeners =
+                new HashSet<SessionListener>(this.listeners);
+        for(SessionListener listener : listeners) {
+            listener.connectionClosed(this, connection);
         }
     }
 
@@ -237,11 +262,11 @@ public class HttpSession extends Session {
         return isSecure;
     }
 
-    public void addSessionCloseListener(SessionCloseListener listener) {
+    public void addSessionCloseListener(SessionListener listener) {
         listeners.add(listener);
     }
 
-    public void removeSessionCloseListener(SessionCloseListener listener) {
+    public void removeSessionCloseListener(SessionListener listener) {
         listeners.remove(listener);
     }
 
@@ -251,5 +276,9 @@ public class HttpSession extends Session {
 
     public int getInactivityTimeout() {
         return inactivityTimeout;
+    }
+
+    public int getConnectionCount() {
+        return connectionQueue.size();
     }
 }

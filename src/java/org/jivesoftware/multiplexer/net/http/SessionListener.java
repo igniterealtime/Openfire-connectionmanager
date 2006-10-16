@@ -13,6 +13,10 @@ import org.jivesoftware.multiplexer.Session;
 /**
  *
  */
-public interface SessionCloseListener {
+public interface SessionListener {
+    public void connectionOpened(Session session, HttpConnection connection);
+
+    public void connectionClosed(Session session, HttpConnection connection);
+
     public void sessionClosed(Session session);
 }

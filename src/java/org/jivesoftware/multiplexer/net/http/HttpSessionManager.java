@@ -118,7 +118,22 @@ public class HttpSessionManager {
         HttpSession.addSession(streamID, session);
         // Send to the server that a new client session has been created
         serverSurrogate.clientSessionCreated(streamID);
-        session.addSessionCloseListener(new SessionCloseListener() {
+        session.addSessionCloseListener(new SessionListener() {
+            public void connectionOpened(Session session, HttpConnection connection) {
+                if (session instanceof HttpSession) {
+                    timer.stop((HttpSession) session);
+                }
+            }
+
+            public void connectionClosed(Session session, HttpConnection connection) {
+                if(session instanceof HttpSession) {
+                    HttpSession http = (HttpSession) session;
+                    if(http.getConnectionCount() <= 0) {
+                        timer.reset(http);
+                    }
+                }
+            }
+
             public void sessionClosed(Session session) {
                 HttpSession.removeSession(session.getStreamID());
                 serverSurrogate.clientSessionClosed(session.getStreamID());
@@ -163,9 +178,9 @@ public class HttpSessionManager {
     }
 
     public HttpConnection forwardRequest(long rid, HttpSession session, boolean isSecure,
-                                         Element rootNode) throws HttpBindException
+                                         Element rootNode) throws HttpBindException,
+            HttpConnectionClosedException
     {
-        timer.reset(session);
 
         //noinspection unchecked
         List<Element> elements = rootNode.elements();
@@ -184,23 +199,27 @@ public class HttpSessionManager {
         private Map<String, InactivityTimeoutTask> sessionMap
                 = new HashMap<String, InactivityTimeoutTask>();
 
-        public void reset(HttpSession session) {
+        public void stop(HttpSession session) {
             InactivityTimeoutTask task = sessionMap.remove(session.getStreamID());
             if(task != null) {
                 session.removeSessionCloseListener(task);
                 task.cancel();
             }
+        }
+
+        public void reset(HttpSession session) {
+            stop(session);
             if(session.isClosed()) {
                 return;
             }
-            task = new InactivityTimeoutTask(session);
+            InactivityTimeoutTask task = new InactivityTimeoutTask(session);
             schedule(task, session.getInactivityTimeout() * 1000);
             session.addSessionCloseListener(task);
             sessionMap.put(session.getStreamID(), task);
         }
     }
 
-    private class InactivityTimeoutTask extends TimerTask implements SessionCloseListener {
+    private class InactivityTimeoutTask extends TimerTask implements SessionListener {
         private Session session;
 
         public InactivityTimeoutTask(Session session) {
@@ -209,6 +228,12 @@ public class HttpSessionManager {
 
         public void run() {
             session.close();
+        }
+
+        public void connectionOpened(Session session, HttpConnection connection) {
+        }
+
+        public void connectionClosed(Session session, HttpConnection connection) {
         }
 
         public void sessionClosed(Session session) {
