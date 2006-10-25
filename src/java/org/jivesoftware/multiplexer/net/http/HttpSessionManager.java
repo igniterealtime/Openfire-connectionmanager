@@ -229,6 +229,7 @@ public class HttpSessionManager {
 
         public void run() {
             session.close();
+            timer.sessionMap.remove(session.getStreamID());
         }
     }
 }
