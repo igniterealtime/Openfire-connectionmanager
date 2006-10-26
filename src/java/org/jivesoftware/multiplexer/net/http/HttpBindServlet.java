@@ -131,9 +131,18 @@ public class HttpBindServlet extends HttpServlet {
                 Log.error("Error sending packet to client.", nc);
                 return;
             }
-            connection.setContinuation(ContinuationSupport.getContinuation(request, connection));
-            request.setAttribute("request-connection", connection);
-            respond(response, connection);
+
+            String type = rootNode.attributeValue("type");
+            if ("terminate".equals(type)) {
+                session.close();
+                respond(response, createEmptyBody().getBytes("utf-8"));
+            }
+            else {
+                connection
+                        .setContinuation(ContinuationSupport.getContinuation(request, connection));
+                request.setAttribute("request-connection", connection);
+                respond(response, connection);
+            }
         }
     }
 
@@ -168,6 +177,10 @@ public class HttpBindServlet extends HttpServlet {
             content = createEmptyBody().getBytes("utf-8");
         }
 
+        respond(response, content);
+    }
+
+    private void respond(HttpServletResponse response, byte [] content) throws IOException {
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType("text/xml");
         response.setCharacterEncoding("utf-8");
