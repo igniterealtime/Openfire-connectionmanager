@@ -11,10 +11,11 @@
 package org.jivesoftware.multiplexer.net.http;
 
 import org.jivesoftware.util.JiveGlobals;
+import org.jivesoftware.util.Log;
 import org.jivesoftware.multiplexer.ServerSurrogate;
 import org.jivesoftware.multiplexer.ConnectionManager;
 import org.jivesoftware.multiplexer.Session;
-import org.dom4j.Element;
+import org.dom4j.*;
 
 import java.util.*;
 
@@ -76,7 +77,9 @@ public class HttpSessionManager {
         return null;
     }
 
-    public HttpSession createSession(Element rootNode, HttpConnection connection) {
+    public HttpSession createSession(Element rootNode, HttpConnection connection) 
+            throws HttpBindException
+    {
         // TODO Check if IP address is allowed to connect to the server
 
         // Default language is English ("en").
@@ -104,6 +107,10 @@ public class HttpSessionManager {
         }
         catch (HttpConnectionClosedException e) {
             /* This won't happen here. */
+        }
+        catch (DocumentException e) {
+            Log.error("Error creating document", e);
+            throw new HttpBindException("Internal server error", true, 500);
         }
 
         timer.reset(session);
@@ -157,27 +164,31 @@ public class HttpSessionManager {
         }
     }
 
-    private String createSessionCreationResponse(HttpSession session) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("<body")
-                .append(" xmlns='http://jabber.org/protocol/httpbind'").append(" authID='")
-                .append(session.getStreamID()).append("'")
-                .append(" sid='").append(session.getStreamID()).append("'")
-                .append(" secure='true" + "'").append(" requests='")
-                .append(String.valueOf(maxRequests)).append("'")
-                .append(" inactivity='").append(String.valueOf(session.getInactivityTimeout()))
-                .append("'")
-                .append(" polling='").append(String.valueOf(pollingInterval)).append("'")
-                .append(" wait='").append(String.valueOf(session.getWait())).append("'")
-                .append(">");
-        builder.append("<stream:features>");
-        builder.append(serverSurrogate.getSASLMechanismsElement(session).asXML());
-        builder.append("<bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\"/>");
-        builder.append("<session xmlns=\"urn:ietf:params:xml:ns:xmpp-session\"/>");
-        builder.append("</stream:features>");
-        builder.append("</body>");
+    private String createSessionCreationResponse(HttpSession session) throws DocumentException {
+        Element response = DocumentHelper.createElement("body");
+        response.addNamespace("", "http://jabber.org/protocol/httpbind");
+        response.addNamespace("stream", "http://etherx.jabber.org/streams");
+        response.addAttribute("authid", session.getStreamID());
+        response.addAttribute("sid", session.getStreamID());
+        response.addAttribute("secure", Boolean.TRUE.toString());
+        response.addAttribute("requests", String.valueOf(maxRequests));
+        response.addAttribute("inactivity", String.valueOf(session.getInactivityTimeout()));
+        response.addAttribute("polling", String.valueOf(pollingInterval));
+        response.addAttribute("wait", String.valueOf(session.getWait()));
 
-        return builder.toString();
+        Element features = response.addElement("stream:features");
+
+        features.add(serverSurrogate.getSASLMechanismsElement(session).createCopy());
+
+        Element bind = DocumentHelper.createElement(new QName("bind",
+                new Namespace("", "urn:ietf:params:xml:ns:xmpp-bind")));
+        features.add(bind);
+
+        Element sessionElement = DocumentHelper.createElement(new QName("session",
+                new Namespace("", "urn:ietf:params:xml:ns:xmpp-session")));
+        features.add(sessionElement);
+
+        return response.asXML();
     }
 
     public HttpConnection forwardRequest(long rid, HttpSession session, boolean isSecure,

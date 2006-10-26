@@ -18,6 +18,7 @@ import org.dom4j.io.XMPPPacketReader;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
+import org.dom4j.DocumentHelper;
 import org.mortbay.util.ajax.ContinuationSupport;
 
 import javax.servlet.http.HttpServlet;
@@ -146,9 +147,14 @@ public class HttpBindServlet extends HttpServlet {
             return;
         }
 
-        HttpConnection connection = new HttpConnection(rid, request.isSecure());
-        connection.setSession(sessionManager.createSession(rootNode, connection));
-        respond(response, connection);
+        try {
+            HttpConnection connection = new HttpConnection(rid, request.isSecure());
+            connection.setSession(sessionManager.createSession(rootNode, connection));
+            respond(response, connection);
+        }
+        catch (HttpBindException e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
     }
 
     private void respond(HttpServletResponse response, HttpConnection connection)
@@ -171,7 +177,9 @@ public class HttpBindServlet extends HttpServlet {
     }
 
     private String createEmptyBody() {
-        return "<body xmlns='http://jabber.org/protocol/httpbind'/>";
+        Element body = DocumentHelper.createElement("body");
+        body.addNamespace("", "http://jabber.org/protocol/httpbind");
+        return body.asXML();
     }
 
     private long getLongAttribue(String value, long defaultValue) {

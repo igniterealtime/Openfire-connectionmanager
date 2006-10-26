@@ -167,7 +167,7 @@ public class HttpSession extends Session {
 
     private String createDeliverable(Collection<Element> elements) {
         Element body = DocumentHelper.createElement("body");
-        body.addAttribute("xmlns", "http://jabber.org/protocol/httpbind");
+        body.addNamespace("", "http://jabber.org/protocol/httpbind");
         for(Element child : elements) {
             child = child.createCopy();
             child.setParent(null);
