@@ -93,7 +93,9 @@ public class HttpBindServlet extends HttpServlet {
         if (connection == null) {
             return false;
         }
-        respond(response, connection);
+        synchronized (connection.getSession()) {
+            respond(response, connection);
+        }
         return true;
     }
 
