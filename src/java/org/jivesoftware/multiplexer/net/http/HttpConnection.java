@@ -100,9 +100,15 @@ public class HttpConnection {
      */
     public String getDeliverable() throws HttpBindTimeoutException {
         if (body == null && continuation != null) {
-            body = waitForDeliverable();
+            try {
+                body = waitForDeliverable();
+            }
+            catch (HttpBindTimeoutException e) {
+                this.isClosed = true;
+                throw e;
+            }
         }
-        else if (body == null && continuation == null) {
+        else if (body == null) {
             throw new IllegalStateException("Continuation not set, cannot wait for deliverable.");
         }
         return body;
