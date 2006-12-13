@@ -7,6 +7,7 @@
 
 package org.jivesoftware.multiplexer.net;
 
+import org.jivesoftware.util.CertificateManager;
 import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.Log;
 
@@ -80,7 +81,7 @@ class ServerTrustManager implements X509TrustManager {
         if (verify) {
             int nSize = x509Certificates.length;
 
-            List<String> peerIdentities = TLSStreamHandler.getPeerIdentities(x509Certificates[0]);
+            List<String> peerIdentities = CertificateManager.getPeerIdentities(x509Certificates[0]);
 
             if (JiveGlobals.getBooleanProperty("xmpp.server.certificate.verify.chain", true)) {
                 // Working down the chain, for every certificate in the chain,

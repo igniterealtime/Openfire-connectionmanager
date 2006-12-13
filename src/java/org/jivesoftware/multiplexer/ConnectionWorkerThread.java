@@ -18,7 +18,6 @@ import org.dom4j.Element;
 import org.dom4j.io.XMPPPacketReader;
 import org.jivesoftware.multiplexer.net.DNSUtil;
 import org.jivesoftware.multiplexer.net.MXParser;
-import org.jivesoftware.multiplexer.net.SocketAcceptThread;
 import org.jivesoftware.multiplexer.net.SocketConnection;
 import org.jivesoftware.multiplexer.spi.ServerFailoverDeliverer;
 import org.jivesoftware.util.JiveGlobals;
@@ -50,6 +49,10 @@ public class ConnectionWorkerThread extends Thread {
      * The utf-8 charset for decoding and encoding Jabber packet streams.
      */
     private static String CHARSET = "UTF-8";
+    /**
+     * The default XMPP port for connection multiplex.
+     */
+    public static final int DEFAULT_MULTIPLEX_PORT = 5262;
 
     private static DocumentFactory docFactory = DocumentFactory.getInstance();
     // Sequence and random number generator used for creating unique IQ ID's.
@@ -121,7 +124,7 @@ public class ConnectionWorkerThread extends Thread {
     private boolean createConnection() {
         String realHostname = null;
         int port =
-                JiveGlobals.getIntProperty("xmpp.port", SocketAcceptThread.DEFAULT_MULTIPLEX_PORT);
+                JiveGlobals.getIntProperty("xmpp.port", DEFAULT_MULTIPLEX_PORT);
         Socket socket = new Socket();
         try {
             // Get the real hostname to connect to using DNS lookup of the specified hostname
@@ -189,20 +192,6 @@ public class ConnectionWorkerThread extends Thread {
                         return false;
                     }
                 }
-                /*if (features != null && features.element("mechanisms") != null) {
-                    // Try to authenticate with the server using SASL authentication
-                    // TODO Compression should be done before SASL
-                    if (!doSASLAuthentication(reader, openingStream)) {
-                        // Failed to authenticate with the server
-                        connection = null;
-                        return false;
-                    }
-                }
-                else {
-                    // Server didn't offer SASL authentication
-                    connection = null;
-                    return false;
-                }*/
                 if (features != null && features.element("compression") != null) {
                     // Try to use stream compression since the server supports it
                     if (!compressConnection(reader, openingStream)) {

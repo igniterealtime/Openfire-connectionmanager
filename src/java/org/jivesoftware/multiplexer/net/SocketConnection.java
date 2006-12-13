@@ -29,8 +29,8 @@ import java.net.Socket;
 import java.nio.channels.Channels;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -145,17 +145,6 @@ public class SocketConnection implements Connection {
         return tlsStreamHandler;
     }
 
-    /**
-     * Secures the plain connection by negotiating TLS with the client. When connecting
-     * to a remote server then <tt>clientMode</tt> will be <code>true</code> and
-     * <tt>remoteServer</tt> is the server name of the remote server. Otherwise <tt>clientMode</tt>
-     * will be <code>false</code> and  <tt>remoteServer</tt> null.
-     *
-     * @param clientMode boolean indicating if this entity is a client or a server.
-     * @param remoteServer server name of the remote server we are connecting to or <tt>null</tt>
-     *        when not in client mode.
-     * @throws IOException if an error occured while securing the connection.
-     */
     public void startTLS(boolean clientMode, String remoteServer) throws IOException {
         if (!secure) {
             secure = true;
@@ -173,27 +162,26 @@ public class SocketConnection implements Connection {
         }
     }
 
-    /**
-     * Start using compression for this connection. Compression will only be available after TLS
-     * has been negotiated. This means that a connection can never be using compression before
-     * TLS. However, it is possible to use compression without TLS.
-     *
-     * @throws IOException if an error occured while starting compression.
-     */
-    public void startCompression() throws IOException {
+    public void startCompression() {
         compressed = true;
 
-        if (tlsStreamHandler == null) {
-            ZOutputStream out = new ZOutputStream(socket.getOutputStream(), JZlib.Z_BEST_COMPRESSION);
-            out.setFlushMode(JZlib.Z_PARTIAL_FLUSH);
-            writer = new BufferedWriter(new OutputStreamWriter(out, CHARSET));
-            xmlSerializer = new XMLSocketWriter(writer, this);
-        }
-        else {
-            ZOutputStream out = new ZOutputStream(tlsStreamHandler.getOutputStream(), JZlib.Z_BEST_COMPRESSION);
-            out.setFlushMode(JZlib.Z_PARTIAL_FLUSH);
-            writer = new BufferedWriter(new OutputStreamWriter(out, CHARSET));
-            xmlSerializer = new XMLSocketWriter(writer, this);
+        try {
+            if (tlsStreamHandler == null) {
+                ZOutputStream out = new ZOutputStream(socket.getOutputStream(), JZlib.Z_BEST_COMPRESSION);
+                out.setFlushMode(JZlib.Z_PARTIAL_FLUSH);
+                writer = new BufferedWriter(new OutputStreamWriter(out, CHARSET));
+                xmlSerializer = new XMLSocketWriter(writer, this);
+            }
+            else {
+                ZOutputStream out = new ZOutputStream(tlsStreamHandler.getOutputStream(), JZlib.Z_BEST_COMPRESSION);
+                out.setFlushMode(JZlib.Z_PARTIAL_FLUSH);
+                writer = new BufferedWriter(new OutputStreamWriter(out, CHARSET));
+                xmlSerializer = new XMLSocketWriter(writer, this);
+            }
+        } catch (IOException e) {
+            // TODO Would be nice to still be able to throw the exception and not catch it here
+            Log.error("Error while starting compression", e);
+            compressed = false;
         }
     }
 
@@ -228,19 +216,17 @@ public class SocketConnection implements Connection {
         session = owner;
     }
 
-    public Object registerCloseListener(ConnectionCloseListener listener, Object handbackMessage) {
-        Object status = null;
+    public void registerCloseListener(ConnectionCloseListener listener, Object handbackMessage) {
         if (isClosed()) {
             listener.onConnectionClose(handbackMessage);
         }
         else {
-            status = listeners.put(listener, handbackMessage);
+            listeners.put(listener, handbackMessage);
         }
-        return status;
     }
 
-    public Object removeCloseListener(ConnectionCloseListener listener) {
-        return listeners.remove(listener);
+    public void removeCloseListener(ConnectionCloseListener listener) {
+        listeners.remove(listener);
     }
 
     public InetAddress getInetAddress() {
@@ -374,13 +360,6 @@ public class SocketConnection implements Connection {
         return null;
     }
 
-    /**
-     * Returns the packet deliverer to use when delivering a packet over the socket fails. The
-     * packet deliverer will retry to send the packet using some other connection, will store
-     * the packet offline for later retrieval or will just drop it.
-     *
-     * @return the packet deliverer to use when delivering a packet over the socket fails.
-     */
     public PacketDeliverer getPacketDeliverer() {
         return backupDeliverer;
     }

@@ -11,24 +11,39 @@
 
 package org.jivesoftware.multiplexer;
 
+import org.apache.mina.common.ExecutorThreadModel;
+import org.apache.mina.filter.SSLFilter;
+import org.apache.mina.filter.codec.ProtocolCodecFilter;
+import org.apache.mina.transport.socket.nio.SocketAcceptor;
+import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
+import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.dom4j.Document;
 import org.dom4j.io.SAXReader;
-import org.jivesoftware.multiplexer.net.SSLSocketAcceptThread;
-import org.jivesoftware.multiplexer.net.SocketAcceptThread;
+import org.jivesoftware.multiplexer.net.ClientConnectionHandler;
+import org.jivesoftware.multiplexer.net.SSLConfig;
 import org.jivesoftware.multiplexer.net.SocketSendingTracker;
+import org.jivesoftware.multiplexer.net.XMPPCodecFactory;
 import org.jivesoftware.multiplexer.net.http.HttpBindManager;
 import org.jivesoftware.util.*;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Connection managers handle connections of clients that want to connect to a server. Each
@@ -101,8 +116,8 @@ public class ConnectionManager {
             "org.tanukisoftware.wrapper.WrapperManager";
 
     private ServerSurrogate serverSurrogate;
-    private SocketAcceptThread socketThread;
-    private SSLSocketAcceptThread sslSocketThread;
+    private SocketAcceptor socketAcceptor;
+    private SocketAcceptor sslSocketAcceptor;
     private HttpBindManager httpBindManager;
 
     /**
@@ -255,6 +270,8 @@ public class ConnectionManager {
     }
 
     private void startClientListeners(String localIPAddress) {
+        // TODO Does MINA uses MAX_PRIORITY for threads?
+        // TODO Are threads running as daemon? Can we stop de server?
         // Start clients plain socket unless it's been disabled.
         int port = 5222;
         // Check if old property is being used for storing c2s port
@@ -265,16 +282,32 @@ public class ConnectionManager {
         else if (JiveGlobals.getXMLProperty("xmpp.socket.default.port") != null) {
             port = JiveGlobals.getIntProperty("xmpp.socket.default.port", 5222);
         }
-        ServerPort serverPort = new ServerPort(port, serverName, localIPAddress,
-                false, null, ServerPort.Type.client);
+        // Create SocketAcceptor with correct number of processors
+        socketAcceptor = buildSocketAcceptor();
+        // Customize Executor that will be used by processors to process incoming stanzas
+        ExecutorThreadModel threadModel = ExecutorThreadModel.getInstance("client");
+        int eventThreads = JiveGlobals.getIntProperty("xmpp.processor.threads.standard", 16);
+        Executor eventExecutor = new ThreadPoolExecutor(
+            eventThreads + 1, eventThreads + 1, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>() );
+        threadModel.setExecutor(eventExecutor);
+        socketAcceptor.getDefaultConfig().setThreadModel(threadModel);
+        // Add the XMPP codec filter
+        socketAcceptor.getFilterChain().addFirst("xmpp", new ProtocolCodecFilter(new XMPPCodecFactory()));
+
         try {
-            socketThread = new SocketAcceptThread(serverPort);
-            //socketThread.setDaemon(true);
-            socketThread.setPriority(Thread.MAX_PRIORITY);
-            socketThread.start();
+            // Listen on a specific network interface if it has been set.
+            String interfaceName = JiveGlobals.getXMLProperty("xmpp.socket.network.interface");
+            InetAddress bindInterface = null;
+            if (interfaceName != null) {
+                if (interfaceName.trim().length() > 0) {
+                    bindInterface = InetAddress.getByName(interfaceName);
+                }
+            }
+            // Start accepting connections
+            socketAcceptor.bind(new InetSocketAddress(bindInterface, port), new ClientConnectionHandler());
 
             List<String> params = new ArrayList<String>();
-            params.add(Integer.toString(socketThread.getPort()));
+            params.add(Integer.toString(port));
             Log.info(LocaleUtils.getLocalizedString("startup.plain", params));
         }
         catch (Exception e) {
@@ -285,9 +318,9 @@ public class ConnectionManager {
     }
 
     private void stopClientListeners() {
-        if (socketThread != null) {
-            socketThread.shutdown();
-            socketThread = null;
+        if (socketAcceptor != null) {
+            socketAcceptor.unbindAll();
+            socketAcceptor = null;
         }
     }
 
@@ -298,16 +331,45 @@ public class ConnectionManager {
         if ("".equals(algorithm) || algorithm == null) {
             algorithm = "TLS";
         }
-        ServerPort serverPort = new ServerPort(port, serverName, localIPAddress,
-                true, algorithm, ServerPort.Type.client);
+        // Create SocketAcceptor with correct number of processors
+        sslSocketAcceptor = buildSocketAcceptor();
+        // Customize thread model for c2s (old ssl port)
+        ExecutorThreadModel threadModel = ExecutorThreadModel.getInstance("client_ssl");
+        int eventThreads = JiveGlobals.getIntProperty("xmpp.processor.threads.ssl", 16);
+        Executor eventExecutor = new ThreadPoolExecutor(
+            eventThreads + 1, eventThreads + 1, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>() );
+        threadModel.setExecutor(eventExecutor);
+        sslSocketAcceptor.getDefaultConfig().setThreadModel(threadModel);
+        // Add the XMPP codec filter
+        sslSocketAcceptor.getFilterChain().addFirst("xmpp", new ProtocolCodecFilter(new XMPPCodecFactory()));
+
         try {
-            sslSocketThread = new SSLSocketAcceptThread(serverPort);
-            //sslSocketThread.setDaemon(true);
-            sslSocketThread.setPriority(Thread.MAX_PRIORITY);
-            sslSocketThread.start();
+            // Add the SSL filter now since sockets are "borned" encrypted in the old ssl method
+            SSLContext sslContext = SSLContext.getInstance(algorithm);
+            KeyManagerFactory keyFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyFactory.init(SSLConfig.getKeyStore(), SSLConfig.getKeyPassword().toCharArray());
+            TrustManagerFactory trustFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            trustFactory.init(SSLConfig.getTrustStore());
+
+            sslContext.init(keyFactory.getKeyManagers(),
+                    trustFactory.getTrustManagers(),
+                    new java.security.SecureRandom());
+
+            sslSocketAcceptor.getFilterChain().addFirst("tls", new SSLFilter(sslContext));
+
+            // Listen on a specific network interface if it has been set.
+            String interfaceName = JiveGlobals.getXMLProperty("xmpp.socket.network.interface");
+            InetAddress bindInterface = null;
+            if (interfaceName != null) {
+                if (interfaceName.trim().length() > 0) {
+                    bindInterface = InetAddress.getByName(interfaceName);
+                }
+            }
+            // Start accepting connections
+            sslSocketAcceptor.bind(new InetSocketAddress(bindInterface, port), new ClientConnectionHandler());
 
             List<String> params = new ArrayList<String>();
-            params.add(Integer.toString(sslSocketThread.getPort()));
+            params.add(Integer.toString(port));
             Log.info(LocaleUtils.getLocalizedString("startup.ssl", params));
         }
         catch (Exception e) {
@@ -318,9 +380,9 @@ public class ConnectionManager {
     }
 
     private void stopClientSSLListeners() {
-        if (sslSocketThread != null) {
-            sslSocketThread.shutdown();
-            sslSocketThread = null;
+        if (sslSocketAcceptor != null) {
+            sslSocketAcceptor.unbindAll();
+            sslSocketAcceptor = null;
         }
     }
 
@@ -486,6 +548,41 @@ public class ConnectionManager {
      */
     public String getName() {
         return name;
+    }
+
+    private SocketAcceptor buildSocketAcceptor() {
+        SocketAcceptor socketAcceptor;
+        // Create SocketAcceptor with correct number of processors
+        int ioThreads = JiveGlobals.getIntProperty("xmpp.processor.count", Runtime.getRuntime().availableProcessors());
+        // Set the executor that processors will use. Note that processors will use another executor
+        // for processing events (i.e. incoming traffic)
+        Executor ioExecutor = new ThreadPoolExecutor(
+            ioThreads + 1, ioThreads + 1, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>() );
+        socketAcceptor = new SocketAcceptor(ioThreads, ioExecutor);
+        // Set that it will be possible to bind a socket if there is a connection in the timeout state
+        SocketAcceptorConfig socketAcceptorConfig = (SocketAcceptorConfig) socketAcceptor.getDefaultConfig();
+        socketAcceptorConfig.setReuseAddress(true);
+        // Set the listen backlog (queue) length. Default is 50.
+        socketAcceptorConfig.setBacklog(JiveGlobals.getIntProperty("xmpp.socket.backlog", 50));
+
+        // Set default (low level) settings for new socket connections
+        SocketSessionConfig socketSessionConfig = socketAcceptorConfig.getSessionConfig();
+        //socketSessionConfig.setKeepAlive();
+        int receiveBuffer = JiveGlobals.getIntProperty("xmpp.socket.buffer.receive", -1);
+        if (receiveBuffer > 0 ) {
+            socketSessionConfig.setReceiveBufferSize(receiveBuffer);
+        }
+        int sendBuffer = JiveGlobals.getIntProperty("xmpp.socket.buffer.send", -1);
+        if (sendBuffer > 0 ) {
+            socketSessionConfig.setSendBufferSize(sendBuffer);
+        }
+        int linger = JiveGlobals.getIntProperty("xmpp.socket.linger", -1);
+        if (linger > 0 ) {
+            socketSessionConfig.setSoLinger(linger);
+        }
+        socketSessionConfig.setTcpNoDelay(
+                JiveGlobals.getBooleanProperty("xmpp.socket.tcp-nodelay", socketSessionConfig.isTcpNoDelay()));
+        return socketAcceptor;
     }
 
     /**

@@ -8,6 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/i18n" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/tools/anttask" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
@@ -45,7 +46,9 @@
           <root url="jar://$MODULE_DIR$/build/lib/merge/dom4j.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../java/dom4j-1.6.1/src/java" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">
@@ -54,7 +57,11 @@
           <root url="jar://$MODULE_DIR$/build/lib/merge/xpp3.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../java/xpp3-1.1.4c/src/java/api" />
+          <root url="file://$MODULE_DIR$/../../java/xpp3-1.1.4c/src/java/mxp1_standard" />
+          <root url="file://$MODULE_DIR$/../../java/xpp3-1.1.4c/src/java/mxp1_min" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">
@@ -97,6 +104,66 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/build/lib/servlet-api.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/build/lib/merge/mina-core-1.1.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../java/mina-1.2/core/src/main/java" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/build/lib/merge/mina-filter-ssl-1.1.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../java/mina-1.2/filter-ssl/src/main/java" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/build/lib/merge/mina-filter-compression-1.1.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../java/mina-1.2/filter-compression/src/main/java" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/build/lib/merge/slf4j-simple-1.1.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/build/lib/merge/slf4j-api-1.1.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/build/lib/junit.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

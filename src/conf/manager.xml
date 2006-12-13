@@ -25,7 +25,7 @@
             This property is optional. A random name is generated if none was defined. -->
             <name></name>
             <!-- Number of connections to establish to the server. -->
-            <connections>5</connections>
+            <connections>1</connections>
             <!-- Number of threads for processing incoming server traffic per connection. -->
             <incoming>
                 <threads>5</threads>
@@ -73,7 +73,34 @@
             <!-- <network>
                 <interface></interface>
             </network> -->
+            <!-- Low level socket settings. Use this section to finetune sockets based on load. -->
+            <!-- Maximum number of outstanding connection requests is set. This can be considered a backlog
+                 of requests waiting on the TCP/IP port for the listener to accept the request. -->
+            <backlog>50</backlog>
+            <buffer>
+                <!-- Hint the size of the underlying buffers used by the platform for incoming network I/O -->
+                <receive>-1</receive>
+                <!-- Hint the size of the underlying buffers used by the platform for outgoing network I/O -->
+                <send>-1</send>
+            </buffer>
+            <!-- Specifies a linger-on-close timeout. This option disables/enables immediate return
+                 from a close() of a TCP Socket.-->
+            <linger>-1</linger>
+            <!-- This option causes packets to be flushed on to the network more frequently. If you are
+                 streaming large amounts of data, there is no buffering and hence no delay.-->
+            <!-- <tcp-nodelay>false</tcp-nodelay> -->
         </socket>
+        <processor>
+            <!-- Number of processors that will be listening for incoming traffic. The optimal number is related
+                 to the number of CPUs. Each processor will run in its own thread. -->
+            <!-- <count>1</count> -->
+            <!-- Number of threads that will process incoming traffic detected by processors. Note that
+                 threads will be shared among processors. -->
+            <!-- <threads>
+                <standard>16</standard>
+                <ssl>16</ssl>
+            </threads> -->
+        </processor>
         <httpbind>
             <enabled>false</enabled>
         </httpbind>

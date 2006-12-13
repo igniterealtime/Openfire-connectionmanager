@@ -273,23 +273,6 @@ public class XMPPPacketReader {
         return lastActive > lastHeartbeat ? lastActive : lastHeartbeat;
     }
 
-    /*
-     * DANIELE: Add parse document by string
-     */
-    public Document parseDocument(String xml) throws DocumentException {
-        /*
-        // Long way with reuse of DocumentFactory.
-        DocumentFactory df = getDocumentFactory();
-        SAXReader reader = new SAXReader( df );
-        Document document = reader.read( new StringReader( xml );*/
-
-        // Simple way
-        // TODO Optimize. Do not create a sax reader for each parsing
-        Document document = DocumentHelper.parseText(xml);
-
-        return document;
-    }
-
     // Implementation methods
     //-------------------------------------------------------------------------
     public Document parseDocument() throws DocumentException, IOException, XmlPullParserException {
