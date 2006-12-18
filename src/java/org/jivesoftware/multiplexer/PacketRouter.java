@@ -11,8 +11,6 @@
 
 package org.jivesoftware.multiplexer;
 
-import org.dom4j.Element;
-
 /**
  * A router that handles incoming packets. Packets will be routed to their
  * corresponding handler. A router is much like a forwarded with some logic
@@ -25,8 +23,8 @@ public interface PacketRouter {
     /**
      * Routes the given packet based on its type.
      *
-     * @param doc The packet to route.
+     * @param stanza The stanza to route.
      * @param streamID The ID of the client's stream.
      */
-    void route(Element doc, String streamID);
+    void route(String stanza, String streamID);
 }

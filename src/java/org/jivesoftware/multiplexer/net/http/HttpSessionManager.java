@@ -10,12 +10,12 @@
  */
 package org.jivesoftware.multiplexer.net.http;
 
+import org.dom4j.*;
+import org.jivesoftware.multiplexer.ConnectionManager;
+import org.jivesoftware.multiplexer.ServerSurrogate;
+import org.jivesoftware.multiplexer.Session;
 import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.Log;
-import org.jivesoftware.multiplexer.ServerSurrogate;
-import org.jivesoftware.multiplexer.ConnectionManager;
-import org.jivesoftware.multiplexer.Session;
-import org.dom4j.*;
 
 import java.util.*;
 
@@ -203,7 +203,7 @@ public class HttpSessionManager {
         session.addConnection(connection, isPoll);
 
         for (Element packet : elements) {
-            serverSurrogate.send(packet, session.getStreamID());
+            serverSurrogate.send(packet.asXML(), session.getStreamID());
         }
 
         return connection;

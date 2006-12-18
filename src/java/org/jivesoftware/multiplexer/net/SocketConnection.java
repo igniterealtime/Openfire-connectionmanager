@@ -14,16 +14,16 @@ package org.jivesoftware.multiplexer.net;
 import com.jcraft.jzlib.JZlib;
 import com.jcraft.jzlib.ZOutputStream;
 import org.dom4j.Element;
+import org.dom4j.io.XMPPPacketReader;
 import org.jivesoftware.multiplexer.*;
 import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.LocaleUtils;
 import org.jivesoftware.util.Log;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import javax.net.ssl.SSLSession;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.channels.Channels;
@@ -49,6 +49,10 @@ public class SocketConnection implements Connection {
      * The utf-8 charset for decoding and encoding XMPP packet streams.
      */
     public static final String CHARSET = "UTF-8";
+    /**
+     * Reuse the same factory for all the connections.
+     */
+    private static XmlPullParserFactory factory = null;
 
     private static Map<SocketConnection, String> instances =
             new ConcurrentHashMap<SocketConnection, String>();
@@ -82,7 +86,6 @@ public class SocketConnection implements Connection {
     private Session session;
     private boolean secure;
     private boolean compressed;
-    private org.jivesoftware.util.XMLWriter xmlSerializer;
     private boolean flashClient = false;
     private int majorVersion = 1;
     private int minorVersion = 0;
@@ -100,6 +103,16 @@ public class SocketConnection implements Connection {
      * Compression policy currently in use for this connection.
      */
     private CompressionPolicy compressionPolicy = CompressionPolicy.disabled;
+
+    static {
+        try {
+            factory = XmlPullParserFactory.newInstance(MXParser.class.getName(), null);
+            factory.setNamespaceAware(true);
+        }
+        catch (XmlPullParserException e) {
+            Log.error("Error creating a parser factory", e);
+        }
+    }
 
     public static Collection<SocketConnection> getInstances() {
         return instances.keySet();
@@ -129,7 +142,6 @@ public class SocketConnection implements Connection {
             writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), CHARSET));
         }
         this.backupDeliverer = backupDeliverer;
-        xmlSerializer = new XMLSocketWriter(writer, this);
 
         instances.put(this, "");
     }
@@ -158,7 +170,6 @@ public class SocketConnection implements Connection {
             tlsStreamHandler.start();
             // Use new wrapped writers
             writer = new BufferedWriter(new OutputStreamWriter(tlsStreamHandler.getOutputStream(), CHARSET));
-            xmlSerializer = new XMLSocketWriter(writer, this);
         }
     }
 
@@ -170,13 +181,11 @@ public class SocketConnection implements Connection {
                 ZOutputStream out = new ZOutputStream(socket.getOutputStream(), JZlib.Z_BEST_COMPRESSION);
                 out.setFlushMode(JZlib.Z_PARTIAL_FLUSH);
                 writer = new BufferedWriter(new OutputStreamWriter(out, CHARSET));
-                xmlSerializer = new XMLSocketWriter(writer, this);
             }
             else {
                 ZOutputStream out = new ZOutputStream(tlsStreamHandler.getOutputStream(), JZlib.Z_BEST_COMPRESSION);
                 out.setFlushMode(JZlib.Z_PARTIAL_FLUSH);
                 writer = new BufferedWriter(new OutputStreamWriter(out, CHARSET));
-                xmlSerializer = new XMLSocketWriter(writer, this);
             }
         } catch (IOException e) {
             // TODO Would be nice to still be able to throw the exception and not catch it here
@@ -494,9 +503,17 @@ public class SocketConnection implements Connection {
         }
     }
 
-    public void deliver(Element doc) {
+    public void deliver(String stanza) {
         if (isClosed()) {
-            backupDeliverer.deliver(doc);
+            XMPPPacketReader xmppReader = new XMPPPacketReader();
+            xmppReader.setXPPFactory(factory);
+            try {
+                xmppReader.read(new StringReader(stanza));
+                Element doc = xmppReader.parseDocument().getRootElement();
+                backupDeliverer.deliver(doc);
+            } catch (Exception e) {
+                Log.error("Error parsing stanza: " + stanza, e);
+            }
         }
         else {
             boolean errorDelivering = false;
@@ -504,11 +521,11 @@ public class SocketConnection implements Connection {
             try {
                 requestWriting();
                 allowedToWrite = true;
-                xmlSerializer.write(doc);
+                writer.write(stanza);
                 if (flashClient) {
                     writer.write('\0');
                 }
-                xmlSerializer.flush();
+                writer.flush();
             }
             catch (Exception e) {
                 Log.debug("Error delivering packet" + "\n" + this.toString(), e);
@@ -523,7 +540,15 @@ public class SocketConnection implements Connection {
                 close();
                 // Retry sending the packet again. Most probably if the packet is a
                 // Message it will be stored offline
-                backupDeliverer.deliver(doc);
+                XMPPPacketReader xmppReader = new XMPPPacketReader();
+                xmppReader.setXPPFactory(factory);
+                try {
+                    xmppReader.read(new StringReader(stanza));
+                    Element doc = xmppReader.parseDocument().getRootElement();
+                    backupDeliverer.deliver(doc);
+                } catch (Exception e) {
+                    Log.error("Error parsing stanza: " + stanza, e);
+                }
             }
         }
     }

@@ -179,7 +179,7 @@ public class ServerSurrogate {
      * @param stanza the stanza to send to the server.
      * @param streamID the stream ID assigned by the connection manager to the session.
      */
-    public void send(Element stanza, String streamID) {
+    public void send(String stanza, String streamID) {
         threadPool.execute(new RouteTask(streamID, stanza));
     }
 

@@ -237,7 +237,7 @@ public class ClientSession extends Session {
         // Deliver stanza to client
         if (conn != null && !conn.isClosed()) {
             try {
-                conn.deliver(stanza);
+                conn.deliver(stanza.asXML());
             }
             catch (Exception e) {
                 Log.error(LocaleUtils.getLocalizedString("admin.error"), e);

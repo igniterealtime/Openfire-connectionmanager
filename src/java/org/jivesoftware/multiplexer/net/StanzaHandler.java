@@ -11,9 +11,8 @@
 
 package org.jivesoftware.multiplexer.net;
 
-import org.dom4j.DocumentException;
 import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMPPPacketReader;
 import org.jivesoftware.multiplexer.*;
 import org.jivesoftware.util.Log;
 import org.jivesoftware.util.StringUtils;
@@ -67,8 +66,6 @@ abstract class StanzaHandler {
      */
     private PacketRouter router;
 
-    private SAXReader reader;
-
     static {
         try {
             factory = XmlPullParserFactory.newInstance(MXParser.class.getName(), null);
@@ -85,17 +82,15 @@ abstract class StanzaHandler {
      * @param router the router for sending packets that were read.
      * @param serverName the name of the server this socket is working for.
      * @param connection the connection being read.
+     * @throws org.xmlpull.v1.XmlPullParserException
      */
-    public StanzaHandler(PacketRouter router, String serverName, Connection connection) {
+    public StanzaHandler(PacketRouter router, String serverName, Connection connection) throws XmlPullParserException {
         this.serverName = serverName;
         this.router = router;
         this.connection = connection;
-        // Reader is associated with a new XMPPPacketReader
-        reader = new SAXReader();
-        reader.setEncoding(CHARSET);
     }
 
-    public void process(String stanza) throws Exception {
+    public void process(String stanza, XmlPullParser parser) throws Exception {
 
         boolean initialStream = stanza.startsWith(STREAM_START);
         if (!sessionCreated || initialStream) {
@@ -106,7 +101,6 @@ abstract class StanzaHandler {
             // Found an stream:stream tag...
             if (!sessionCreated) {
                 sessionCreated = true;
-                MXParser parser = (MXParser) factory.newPullParser();
                 parser.setInput(new StringReader(stanza));
                 createSession(parser);
             } else if (startedSASL && session.getStatus() == Session.STATUS_AUTHENTICATED) {
@@ -119,23 +113,22 @@ abstract class StanzaHandler {
             return;
         }
 
-        // Create DOM object from received stanza
-        Element doc;
-        try {
-            doc = reader.read(new StringReader(stanza)).getRootElement();
-        } catch (DocumentException e) {
-            if (stanza.equals("</stream:stream>")) {
-                session.close();
-                return;
-            }
-            // Throw the exception. This will close the connection
-            throw e;
-        }
-        if (doc == null) {
-            // No document found.
+        // Verify if end of stream was requested
+        if (stanza.equals("</stream:stream>")) {
+            session.close();
             return;
         }
-        String tag = doc.getName();
+        // Reset XPP parser with new stanza
+        parser.setInput(new StringReader(stanza));
+        parser.next();
+        String tag = parser.getName();
+        // Verify that XML stanza is valid (i.e. well-formed)
+        boolean valid = validateStanza(stanza, parser);
+
+        if (!valid) {
+            session.close();
+            return;
+        }
         if ("starttls".equals(tag)) {
             // Negotiate TLS
             if (negotiateTLS()) {
@@ -148,31 +141,42 @@ abstract class StanzaHandler {
             // User is trying to authenticate using SASL
             startedSASL = true;
             // Forward packet to the server
-            process(doc);
+            route(stanza);
         } else if ("compress".equals(tag)) {
             // Client is trying to initiate compression
-            if (compressClient(doc)) {
+            if (compressClient(stanza)) {
                 // Compression was successful so open a new stream and offer
                 // resource binding and session establishment (to client sessions only)
                 waitingCompressionACK = true;
             }
         } else {
-            process(doc);
+            route(stanza);
         }
     }
 
-    protected void process(Element doc) {
-        if (doc == null) {
-            return;
+    private boolean validateStanza(String stanza, XmlPullParser parser) {
+        // TODO Detect when XML stanza is not complete
+        try {
+            int eventType = parser.getEventType();
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                eventType = parser.next();
+            }
+        } catch (Exception e) {
+            Log.error("Error parsing XML stanza: " + stanza, e);
+            return false;
         }
 
+        return true;
+    }
+
+    private void route(String stanza) {
         // Ensure that connection was secured if TLS was required
         if (connection.getTlsPolicy() == Connection.TLSPolicy.required &&
                 !connection.isSecure()) {
             closeNeverSecuredConnection();
             return;
         }
-        router.route(doc, session.getStreamID());
+        router.route(stanza, session.getStreamID());
     }
 
     /**
@@ -257,12 +261,11 @@ abstract class StanzaHandler {
      * is already using compression or if client requested to use compression but this feature
      * is disabled.
      *
-     * @param doc the element sent by the client requesting compression. Compression method is
+     * @param stanza the XML stanza sent by the client requesting compression. Compression method is
      *            included.
      * @return true if it was possible to use compression.
-     * @throws IOException if an error occurs while starting using compression.
      */
-    private boolean compressClient(Element doc) {
+    private boolean compressClient(String stanza) {
         String error = null;
         if (connection.getCompressionPolicy() == Connection.CompressionPolicy.disabled) {
             // Client requested compression but this feature is disabled
@@ -277,6 +280,18 @@ abstract class StanzaHandler {
             Log.warn("Client requested compression and connection is already compressed. Closing " +
                     "connection : " + connection);
         } else {
+            XMPPPacketReader xmppReader = new XMPPPacketReader();
+            xmppReader.setXPPFactory(factory);
+            Element doc;
+            try {
+                xmppReader.read(new StringReader(stanza));
+                doc = xmppReader.parseDocument().getRootElement();
+            } catch (Exception e) {
+                Log.error("Error parsing compression stanza: " + stanza, e);
+                connection.close();
+                return false;
+            }
+
             // Check that the requested method is supported
             String method = doc.elementText("method");
             if (!"zlib".equals(method)) {
@@ -375,6 +390,9 @@ abstract class StanzaHandler {
      * If the connection remains open, the XPP will be set to be ready for the
      * first packet. A call to next() should result in an START_TAG state with
      * the first packet in the stream.
+     * @param xpp
+     * @throws java.io.IOException
+     * @throws org.xmlpull.v1.XmlPullParserException
      */
     protected void createSession(XmlPullParser xpp) throws XmlPullParserException, IOException {
         for (int eventType = xpp.getEventType(); eventType != XmlPullParser.START_TAG;) {
@@ -472,6 +490,9 @@ abstract class StanzaHandler {
      * Creates the appropriate {@link Session} subclass based on the specified namespace.
      *
      * @param namespace the namespace sent in the stream element. eg. jabber:client.
+     * @param serverName
+     * @param xpp
+     * @param connection
      * @return the created session or null.
      * @throws org.xmlpull.v1.XmlPullParserException
      */

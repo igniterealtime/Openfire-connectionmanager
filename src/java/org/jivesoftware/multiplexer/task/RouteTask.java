@@ -11,9 +11,8 @@
 
 package org.jivesoftware.multiplexer.task;
 
-import org.jivesoftware.multiplexer.ConnectionWorkerThread;
 import org.jivesoftware.multiplexer.ClientSession;
-import org.dom4j.Element;
+import org.jivesoftware.multiplexer.ConnectionWorkerThread;
 
 /**
  * Task that forwards client packets to the server.
@@ -22,9 +21,9 @@ import org.dom4j.Element;
  */
 public class RouteTask extends ClientTask {
 
-    private Element stanza;
+    private String stanza;
 
-    public RouteTask(String streamID, Element stanza) {
+    public RouteTask(String streamID, String stanza) {
         super(streamID);
         this.stanza = stanza;
     }

@@ -147,7 +147,7 @@ class ServerPacketHandler {
                     error.addElement("unexpected-request")
                             .addAttribute("xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas");
                     // Bounce the failed IQ packet
-                    connectionManager.getServerSurrogate().send(reply, streamID);
+                    connectionManager.getServerSurrogate().send(reply.asXML(), streamID);
                 }
             }
         }
@@ -195,7 +195,7 @@ class ServerPacketHandler {
         reply.addAttribute("type", "result");
         reply.addAttribute("to", connectionManager.getServerName());
         reply.addAttribute("from", jidAddress);
-        connection.deliver(reply);
+        connection.deliver(reply.asXML());
     }
 }
 

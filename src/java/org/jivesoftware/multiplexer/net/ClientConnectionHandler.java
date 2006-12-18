@@ -14,6 +14,7 @@ package org.jivesoftware.multiplexer.net;
 import org.apache.mina.common.IoSession;
 import org.jivesoftware.multiplexer.spi.ClientFailoverDeliverer;
 import org.jivesoftware.util.JiveGlobals;
+import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * ConnectionHandler that knows which subclass of {@link StanzaHandler} should
@@ -23,7 +24,7 @@ import org.jivesoftware.util.JiveGlobals;
  */
 public class ClientConnectionHandler extends ConnectionHandler {
 
-    StanzaHandler createStanzaHandler(NIOConnection connection) {
+    StanzaHandler createStanzaHandler(NIOConnection connection) throws XmlPullParserException {
         return new ClientStanzaHandler(router, serverName, connection);
     }
 

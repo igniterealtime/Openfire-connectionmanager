@@ -25,7 +25,8 @@ import org.xmlpull.v1.XmlPullParserException;
  */
 class ClientStanzaHandler extends StanzaHandler {
 
-    public ClientStanzaHandler(PacketRouter router, String serverName, Connection connection) {
+    public ClientStanzaHandler(PacketRouter router, String serverName, Connection connection)
+            throws XmlPullParserException {
         super(router, serverName, connection);
     }
 

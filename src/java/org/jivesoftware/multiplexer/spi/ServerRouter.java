@@ -11,10 +11,9 @@
 
 package org.jivesoftware.multiplexer.spi;
 
-import org.jivesoftware.multiplexer.PacketRouter;
 import org.jivesoftware.multiplexer.ConnectionManager;
+import org.jivesoftware.multiplexer.PacketRouter;
 import org.jivesoftware.multiplexer.ServerSurrogate;
-import org.dom4j.Element;
 
 /**
  * Packet router that will route all traffic to the server.
@@ -29,7 +28,7 @@ public class ServerRouter implements PacketRouter {
         serverSurrogate = ConnectionManager.getInstance().getServerSurrogate();
     }
 
-    public void route(Element stanza, String streamID) {
+    public void route(String stanza, String streamID) {
         serverSurrogate.send(stanza, streamID);
     }
 }

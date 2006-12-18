@@ -11,8 +11,6 @@
 
 package org.jivesoftware.multiplexer;
 
-import org.dom4j.Element;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -90,14 +88,14 @@ public interface Connection {
      * Delivers the packet to this connection without checking the recipient.
      * The method essentially calls <code>socket.send(packet.getWriteBuffer())</code>.
      *
-     * @param doc the packet to deliver.
+     * @param stanza the stanza to deliver.
      */
-    public void deliver(Element doc);
+    public void deliver(String stanza);
 
     /**
      * Delivers raw text to this connection. This is a very low level way for sending
      * XML stanzas to the client. This method should not be used unless you have very
-     * good reasons for not using {@link #deliver(Element)}.<p>
+     * good reasons for not using {@link #deliver(String)}.<p>
      *
      * This method avoids having to get the writer of this connection and mess directly
      * with the writer. Therefore, this method ensures a correct delivery of the stanza

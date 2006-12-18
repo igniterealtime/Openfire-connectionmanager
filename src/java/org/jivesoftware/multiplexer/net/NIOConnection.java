@@ -17,21 +17,25 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.CompressionFilter;
 import org.apache.mina.filter.SSLFilter;
 import org.dom4j.Element;
-import org.dom4j.io.OutputFormat;
+import org.dom4j.io.XMPPPacketReader;
 import org.jivesoftware.multiplexer.Connection;
 import org.jivesoftware.multiplexer.ConnectionCloseListener;
 import org.jivesoftware.multiplexer.PacketDeliverer;
 import org.jivesoftware.multiplexer.Session;
 import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.Log;
-import org.jivesoftware.util.XMLWriter;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,6 +54,10 @@ public class NIOConnection implements Connection {
      * The utf-8 charset for decoding and encoding XMPP packet streams.
      */
     public static final String CHARSET = "UTF-8";
+    /**
+     * Reuse the same factory for all the connections.
+     */
+    private static XmlPullParserFactory factory = null;
 
     private Session session;
     private IoSession ioSession;
@@ -77,11 +85,22 @@ public class NIOConnection implements Connection {
      * Compression policy currently in use for this connection.
      */
     private CompressionPolicy compressionPolicy = CompressionPolicy.disabled;
+    private CharsetEncoder encoder;
 
+    static {
+        try {
+            factory = XmlPullParserFactory.newInstance(MXParser.class.getName(), null);
+            factory.setNamespaceAware(true);
+        }
+        catch (XmlPullParserException e) {
+            Log.error("Error creating a parser factory", e);
+        }
+    }
 
     public NIOConnection(IoSession session, PacketDeliverer packetDeliverer) {
         this.ioSession = session;
         this.backupDeliverer = packetDeliverer;
+        encoder = Charset.forName(CHARSET).newEncoder();
     }
 
     public boolean validate() {
@@ -186,9 +205,17 @@ public class NIOConnection implements Connection {
         return ioSession.getFilterChain().contains("tls");
     }
 
-    public void deliver(Element doc) {
+    public void deliver(String stanza) {
         if (isClosed()) {
-            backupDeliverer.deliver(doc);
+            XMPPPacketReader xmppReader = new XMPPPacketReader();
+            xmppReader.setXPPFactory(factory);
+            try {
+                xmppReader.read(new StringReader(stanza));
+                Element doc = xmppReader.parseDocument().getRootElement();
+                backupDeliverer.deliver(doc);
+            } catch (Exception e) {
+                Log.error("Error parsing stanza: " + stanza, e);
+            }
         }
         else {
             ByteBuffer buffer = ByteBuffer.allocate(4096);
@@ -196,9 +223,7 @@ public class NIOConnection implements Connection {
 
             boolean errorDelivering = false;
             try {
-                XMLWriter xmlSerializer = new XMLWriter(buffer.asOutputStream(), new OutputFormat());
-                xmlSerializer.write(doc);
-                xmlSerializer.flush();
+                buffer.putString(stanza, encoder);
                 if (flashClient) {
                     buffer.put((byte) '\0');
                 }
@@ -214,7 +239,15 @@ public class NIOConnection implements Connection {
                 close();
                 // Retry sending the packet again. Most probably if the packet is a
                 // Message it will be stored offline
-                backupDeliverer.deliver(doc);
+                XMPPPacketReader xmppReader = new XMPPPacketReader();
+                xmppReader.setXPPFactory(factory);
+                try {
+                    xmppReader.read(new StringReader(stanza));
+                    Element doc = xmppReader.parseDocument().getRootElement();
+                    backupDeliverer.deliver(doc);
+                } catch (Exception e) {
+                    Log.error("Error parsing stanza: " + stanza, e);
+                }
             }
         }
     }

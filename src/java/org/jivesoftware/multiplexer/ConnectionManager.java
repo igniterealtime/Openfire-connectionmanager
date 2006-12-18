@@ -287,9 +287,11 @@ public class ConnectionManager {
         // Customize Executor that will be used by processors to process incoming stanzas
         ExecutorThreadModel threadModel = ExecutorThreadModel.getInstance("client");
         int eventThreads = JiveGlobals.getIntProperty("xmpp.processor.threads.standard", 16);
-        Executor eventExecutor = new ThreadPoolExecutor(
-            eventThreads + 1, eventThreads + 1, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>() );
-        threadModel.setExecutor(eventExecutor);
+        ThreadPoolExecutor eventExecutor = (ThreadPoolExecutor)threadModel.getExecutor();
+        eventExecutor.setCorePoolSize(eventThreads + 1);
+        eventExecutor.setMaximumPoolSize(eventThreads + 1);
+        eventExecutor.setKeepAliveTime(60, TimeUnit.SECONDS);
+
         socketAcceptor.getDefaultConfig().setThreadModel(threadModel);
         // Add the XMPP codec filter
         socketAcceptor.getFilterChain().addFirst("xmpp", new ProtocolCodecFilter(new XMPPCodecFactory()));
@@ -336,9 +338,11 @@ public class ConnectionManager {
         // Customize thread model for c2s (old ssl port)
         ExecutorThreadModel threadModel = ExecutorThreadModel.getInstance("client_ssl");
         int eventThreads = JiveGlobals.getIntProperty("xmpp.processor.threads.ssl", 16);
-        Executor eventExecutor = new ThreadPoolExecutor(
-            eventThreads + 1, eventThreads + 1, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>() );
-        threadModel.setExecutor(eventExecutor);
+        ThreadPoolExecutor eventExecutor = (ThreadPoolExecutor)threadModel.getExecutor();
+        eventExecutor.setCorePoolSize(eventThreads + 1);
+        eventExecutor.setMaximumPoolSize(eventThreads + 1);
+        eventExecutor.setKeepAliveTime(60, TimeUnit.SECONDS);
+
         sslSocketAcceptor.getDefaultConfig().setThreadModel(threadModel);
         // Add the XMPP codec filter
         sslSocketAcceptor.getFilterChain().addFirst("xmpp", new ProtocolCodecFilter(new XMPPCodecFactory()));

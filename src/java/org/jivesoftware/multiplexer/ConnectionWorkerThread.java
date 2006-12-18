@@ -13,7 +13,6 @@ package org.jivesoftware.multiplexer;
 
 import com.jcraft.jzlib.JZlib;
 import com.jcraft.jzlib.ZInputStream;
-import org.dom4j.DocumentFactory;
 import org.dom4j.Element;
 import org.dom4j.io.XMPPPacketReader;
 import org.jivesoftware.multiplexer.net.DNSUtil;
@@ -54,7 +53,6 @@ public class ConnectionWorkerThread extends Thread {
      */
     public static final int DEFAULT_MULTIPLEX_PORT = 5262;
 
-    private static DocumentFactory docFactory = DocumentFactory.getInstance();
     // Sequence and random number generator used for creating unique IQ ID's.
     private static int sequence = 0;
     private static Random random = new Random();
@@ -388,16 +386,14 @@ public class ConnectionWorkerThread extends Thread {
      * @param streamID the stream ID assigned by the connection manager to the new session.
      */
     public void clientSessionCreated(String streamID) {
-        Element iq = docFactory.createDocument().addElement("iq");
-        iq.addAttribute("type", "set");
-        iq.addAttribute("to", serverName);
-        iq.addAttribute("from", jidAddress);
-        iq.addAttribute("id", String.valueOf(random.nextInt(1000) + "-" + sequence++));
-        Element child = iq.addElement("session", "http://jabber.org/protocol/connectionmanager");
-        child.addAttribute("id", streamID);
-        child.addElement("create");
+        StringBuilder sb = new StringBuilder(100);
+        sb.append("<iq type='set' to='").append(serverName);
+        sb.append("' from='").append(jidAddress);
+        sb.append("' id='").append(String.valueOf(random.nextInt(1000) + "-" + sequence++));
+        sb.append("'><session xmlns='http://jabber.org/protocol/connectionmanager' id='").append(streamID);
+        sb.append("'><create/></session></iq>");
         // Forward the notification to the server
-        connection.deliver(iq);
+        connection.deliver(sb.toString());
     }
 
     /**
@@ -406,16 +402,14 @@ public class ConnectionWorkerThread extends Thread {
      * @param streamID the stream ID assigned by the connection manager to the closed session.
      */
     public void clientSessionClosed(String streamID) {
-        Element iq = docFactory.createDocument().addElement("iq");
-        iq.addAttribute("type", "set");
-        iq.addAttribute("to", serverName);
-        iq.addAttribute("from", jidAddress);
-        iq.addAttribute("id", String.valueOf(random.nextInt(1000) + "-" + sequence++));
-        Element child = iq.addElement("session", "http://jabber.org/protocol/connectionmanager");
-        child.addAttribute("id", streamID);
-        child.addElement("close");
+        StringBuilder sb = new StringBuilder(100);
+        sb.append("<iq type='set' to='").append(serverName);
+        sb.append("' from='").append(jidAddress);
+        sb.append("' id='").append(String.valueOf(random.nextInt(1000) + "-" + sequence++));
+        sb.append("'><session xmlns='http://jabber.org/protocol/connectionmanager' id='").append(streamID);
+        sb.append("'><close/></session></iq>");
         // Forward the notification to the server
-        connection.deliver(iq);
+        connection.deliver(sb.toString());
     }
 
     /**
@@ -427,16 +421,14 @@ public class ConnectionWorkerThread extends Thread {
      *        longer available session.
      */
     public void deliveryFailed(Element stanza, String streamID) {
-        Element iq = docFactory.createDocument().addElement("iq");
-        iq.addAttribute("type", "set");
-        iq.addAttribute("to", serverName);
-        iq.addAttribute("from", jidAddress);
-        iq.addAttribute("id", String.valueOf(random.nextInt(1000) + "-" + sequence++));
-        Element child = iq.addElement("session", "http://jabber.org/protocol/connectionmanager");
-        child.addAttribute("id", streamID);
-        child.addElement("failed").add(stanza.createCopy());
+        StringBuilder sb = new StringBuilder(100);
+        sb.append("<iq type='set' to='").append(serverName);
+        sb.append("' from='").append(jidAddress);
+        sb.append("' id='").append(String.valueOf(random.nextInt(1000) + "-" + sequence++));
+        sb.append("'><session xmlns='http://jabber.org/protocol/connectionmanager' id='").append(streamID);
+        sb.append("'><failed>").append(stanza.asXML()).append("</failed></session></iq>");
         // Send notification to the server
-        connection.deliver(iq);
+        connection.deliver(sb.toString());
     }
 
     public void run() {
@@ -470,14 +462,17 @@ public class ConnectionWorkerThread extends Thread {
      * @param stanza the original client stanza that is going to be wrapped.
      * @param streamID the stream ID assigned by the connection manager to the client session.
      */
-    public void deliver(Element stanza, String streamID) {
+    public void deliver(String stanza, String streamID) {
         // Wrap the stanza
-        Element wrapper = docFactory.createDocument().addElement("route");
-        wrapper.addAttribute("to", serverName);
-        wrapper.addAttribute("from", jidAddress);
-        wrapper.addAttribute("streamid", streamID);
-        wrapper.add(stanza.createCopy());
+        StringBuilder sb = new StringBuilder(80);
+        sb.append("<route ");
+        sb.append("to='").append(serverName);
+        sb.append("' from='").append(jidAddress);
+        sb.append("' streamid='").append(streamID).append("'>");
+        sb.append(stanza);
+        sb.append("</route>");
+
         // Forward the wrapped stanza to the server
-        connection.deliver(wrapper);
+        connection.deliver(sb.toString());
     }
 }

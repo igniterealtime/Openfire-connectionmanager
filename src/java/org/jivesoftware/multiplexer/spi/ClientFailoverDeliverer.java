@@ -11,10 +11,10 @@
 
 package org.jivesoftware.multiplexer.spi;
 
+import org.dom4j.Element;
+import org.jivesoftware.multiplexer.ConnectionManager;
 import org.jivesoftware.multiplexer.PacketDeliverer;
 import org.jivesoftware.multiplexer.ServerSurrogate;
-import org.jivesoftware.multiplexer.ConnectionManager;
-import org.dom4j.Element;
 
 /**
  * Deliverer to use when a stanza received from the server failed to be forwarded
@@ -50,7 +50,7 @@ public class ClientFailoverDeliverer implements PacketDeliverer {
                 error.addElement("unexpected-request")
                         .addAttribute("xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas");
                 // Bounce the failed IQ packet
-                serverSurrogate.send(reply, streamID);
+                serverSurrogate.send(reply.asXML(), streamID);
             }
         }
     }
