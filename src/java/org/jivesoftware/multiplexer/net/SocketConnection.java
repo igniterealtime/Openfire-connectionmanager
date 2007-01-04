@@ -76,6 +76,7 @@ public class SocketConnection implements Connection {
 
     private Writer writer;
     private AtomicBoolean writing = new AtomicBoolean(false);
+    //private AtomicLong sent = new AtomicLong(0);
 
     /**
      * Deliverer to use when the connection is closed or was closed when delivering
@@ -508,8 +509,7 @@ public class SocketConnection implements Connection {
             XMPPPacketReader xmppReader = new XMPPPacketReader();
             xmppReader.setXPPFactory(factory);
             try {
-                xmppReader.read(new StringReader(stanza));
-                Element doc = xmppReader.parseDocument().getRootElement();
+                Element doc = xmppReader.read(new StringReader(stanza)).getRootElement();
                 backupDeliverer.deliver(doc);
             } catch (Exception e) {
                 Log.error("Error parsing stanza: " + stanza, e);
@@ -520,6 +520,7 @@ public class SocketConnection implements Connection {
             boolean allowedToWrite = false;
             try {
                 requestWriting();
+                //System.out.println(new Date(System.currentTimeMillis()) + ", " + hashCode() + ", " + sent.incrementAndGet());
                 allowedToWrite = true;
                 writer.write(stanza);
                 if (flashClient) {
@@ -543,8 +544,7 @@ public class SocketConnection implements Connection {
                 XMPPPacketReader xmppReader = new XMPPPacketReader();
                 xmppReader.setXPPFactory(factory);
                 try {
-                    xmppReader.read(new StringReader(stanza));
-                    Element doc = xmppReader.parseDocument().getRootElement();
+                    Element doc = xmppReader.read(new StringReader(stanza)).getRootElement();
                     backupDeliverer.deliver(doc);
                 } catch (Exception e) {
                     Log.error("Error parsing stanza: " + stanza, e);
@@ -559,6 +559,7 @@ public class SocketConnection implements Connection {
             boolean allowedToWrite = false;
             try {
                 requestWriting();
+                //System.out.println(new Date(System.currentTimeMillis()) + ", " + hashCode() + ", " + sent.incrementAndGet());
                 allowedToWrite = true;
                 // Register that we started sending data on the connection
                 writeStarted();
