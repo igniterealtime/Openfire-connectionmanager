@@ -210,8 +210,7 @@ public class NIOConnection implements Connection {
             XMPPPacketReader xmppReader = new XMPPPacketReader();
             xmppReader.setXPPFactory(factory);
             try {
-                xmppReader.read(new StringReader(stanza));
-                Element doc = xmppReader.parseDocument().getRootElement();
+                Element doc = xmppReader.read(new StringReader(stanza)).getRootElement();
                 backupDeliverer.deliver(doc);
             } catch (Exception e) {
                 Log.error("Error parsing stanza: " + stanza, e);
@@ -242,8 +241,7 @@ public class NIOConnection implements Connection {
                 XMPPPacketReader xmppReader = new XMPPPacketReader();
                 xmppReader.setXPPFactory(factory);
                 try {
-                    xmppReader.read(new StringReader(stanza));
-                    Element doc = xmppReader.parseDocument().getRootElement();
+                    Element doc = xmppReader.read(new StringReader(stanza)).getRootElement();
                     backupDeliverer.deliver(doc);
                 } catch (Exception e) {
                     Log.error("Error parsing stanza: " + stanza, e);
