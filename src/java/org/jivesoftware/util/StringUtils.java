@@ -10,6 +10,9 @@
 
 package org.jivesoftware.util;
 
+import org.jivesoftware.stringprep.IDNA;
+import org.jivesoftware.stringprep.Stringprep;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -27,6 +30,11 @@ public class StringUtils {
     private static final char[] AMP_ENCODE = "&amp;".toCharArray();
     private static final char[] LT_ENCODE = "&lt;".toCharArray();
     private static final char[] GT_ENCODE = "&gt;".toCharArray();
+
+    // Stringprep operations are very expensive. Therefore, we cache node, domain and
+    // resource values that have already had stringprep applied so that we can check
+    // incoming values against the cache.
+    private static Map stringprepCache = Collections.synchronizedMap(new Cache(10000));
 
     private StringUtils() {
         // Not instantiable.
@@ -983,5 +991,126 @@ public class StringUtils {
      */
     public static String dateToMillis(Date date) {
         return zeroPadString(Long.toString(date.getTime()), 15);
+    }
+
+    /**
+     * Validates that the provided JID address is well-formed. Note that doing stringprep
+     * operations is very expensive. We are using a Cache to reduce number of stringprep
+     * operations but some of them will eventually be needed.
+     *
+     * @param jid the JID address to validate.
+     * @return true if the address is well-formed.
+     */
+    public static boolean validateJID(String jid) {
+        String node = null , domain, resource;
+        if (jid == null) {
+            return true;
+        }
+
+        int atIndex = jid.indexOf("@");
+        int slashIndex = jid.indexOf("/");
+
+        // Node
+        if (atIndex > 0) {
+            node = jid.substring(0, atIndex);
+        }
+
+        // Domain
+        if (atIndex + 1 > jid.length()) {
+            throw new IllegalArgumentException("JID with empty domain not valid");
+        }
+        if (atIndex < 0) {
+            if (slashIndex > 0) {
+                domain = jid.substring(0, slashIndex);
+            }
+            else {
+                domain = jid;
+            }
+        }
+        else {
+            if (slashIndex > 0) {
+                domain = jid.substring(atIndex + 1, slashIndex);
+            }
+            else {
+                domain = jid.substring(atIndex + 1);
+            }
+        }
+
+        // Resource
+        if (slashIndex + 1 > jid.length() || slashIndex < 0) {
+            resource = null;
+        }
+        else {
+            resource = jid.substring(slashIndex + 1);
+        }
+
+
+        // Set node and resource to null if they are the empty string.
+        if (node != null && node.equals("")) {
+            node = null;
+        }
+        if (resource != null && resource.equals("")) {
+            resource = null;
+        }
+        // Stringprep (node prep, resourceprep, etc).
+        try {
+            if (!stringprepCache.containsKey(node)) {
+                node = Stringprep.nodeprep(node);
+                // Validate field is not greater than 1023 bytes. UTF-8 characters use two bytes.
+                if (node != null && node.length()*2 > 1023) {
+                    Log.warn("Node cannot be larger than 1023 bytes. " +
+                            "Size is " + (node.length() * 2) + " bytes.");
+                    return false;
+                }
+                stringprepCache.put(node, null);
+            }
+            // XMPP specifies that domains should be run through IDNA and
+            // that they should be run through nameprep before doing any
+            // comparisons. We always run the domain through nameprep to
+            // make comparisons easier later.
+            if (!stringprepCache.containsKey(domain)) {
+                domain = Stringprep.nameprep(IDNA.toASCII(domain), false);
+                // Validate field is not greater than 1023 bytes. UTF-8 characters use two bytes.
+                if (domain.length()*2 > 1023) {
+                    Log.warn("Domain cannot be larger than 1023 bytes. " +
+                            "Size is " + (domain.length() * 2) + " bytes.");
+                    return false;
+                }
+                stringprepCache.put(domain, null);
+            }
+            if (!stringprepCache.containsKey(resource)) {
+                resource = Stringprep.resourceprep(resource);
+                // Validate field is not greater than 1023 bytes. UTF-8 characters use two bytes.
+                if (resource != null && resource.length()*2 > 1023) {
+                    Log.warn("Resource cannot be larger than 1023 bytes. " +
+                            "Size is " + (resource.length() * 2) + " bytes.");
+                    return false;
+                }
+                stringprepCache.put(resource, null);
+            }
+        }
+        catch (Exception e) {
+            Log.warn("Failed to validate JID: " + jid, e);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * A simple cache class that extends LinkedHashMap. It uses an LRU policy to
+     * keep the cache at a maximum size.
+     */
+    private static class Cache extends LinkedHashMap {
+
+        private int maxSize;
+
+        public Cache(int maxSize) {
+            super(64, .75f, true);
+            this.maxSize = maxSize;
+        }
+
+        protected boolean removeEldestEntry(Map.Entry eldest) {
+            return size() > maxSize;
+        }
     }
 }

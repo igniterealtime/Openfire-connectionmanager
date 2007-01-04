@@ -82,7 +82,7 @@ abstract class StanzaHandler {
      * @param router the router for sending packets that were read.
      * @param serverName the name of the server this socket is working for.
      * @param connection the connection being read.
-     * @throws org.xmlpull.v1.XmlPullParserException
+     * @throws org.xmlpull.v1.XmlPullParserException of an error while parsing occurs.
      */
     public StanzaHandler(PacketRouter router, String serverName, Connection connection) throws XmlPullParserException {
         this.serverName = serverName;
@@ -123,7 +123,13 @@ abstract class StanzaHandler {
         parser.next();
         String tag = parser.getName();
         // Verify that XML stanza is valid (i.e. well-formed)
-        boolean valid = validateStanza(stanza, parser);
+        boolean valid;
+        try {
+            valid = validateStanza(stanza, parser);
+        } catch (IllegalArgumentException e) {
+            // Specify TO address was incorrect so do not process this stanza
+            return;
+        }
 
         if (!valid) {
             session.close();
@@ -156,8 +162,48 @@ abstract class StanzaHandler {
 
     private boolean validateStanza(String stanza, XmlPullParser parser) {
         // TODO Detect when XML stanza is not complete
+        int eventType;
         try {
-            int eventType = parser.getEventType();
+            eventType = parser.getEventType();
+        } catch (XmlPullParserException e) {
+            Log.error("Error parsing XML stanza: " + stanza, e);
+            return false;
+        }
+        if (eventType == XmlPullParser.START_TAG) {
+            String to = parser.getAttributeValue("", "to");
+            if (to != null) {
+                // Validate the to address
+                if (!StringUtils.validateJID(to)) {
+                    StringBuilder reply = new StringBuilder();
+                    String stanzaType;
+                    if (parser.getName().equals("message")) {
+                        stanzaType ="message";
+                    }
+                    else if (parser.getName().equals("iq")) {
+                        stanzaType ="iq";
+                    }
+                    else if (parser.getName().equals("presence")) {
+                        stanzaType ="presence";
+                    }
+                    else {
+                        return false;
+                    }
+                    reply.append("<").append(stanzaType).append(" type='error'");
+                    String id = parser.getAttributeValue("", "id");
+                    if (id != null) {
+                        reply.append(" id='").append(id).append("'");
+                    }
+                    reply.append(">");
+                    reply.append("<error type='modify'><jid-malformed xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>");
+                    reply.append("</error>");
+                    reply.append("</").append(stanzaType).append(">");
+
+                    connection.deliverRawText(reply.toString());
+                    throw new IllegalArgumentException("Illegal TO address");
+                }
+            }
+        }
+        try {
             while (eventType != XmlPullParser.END_DOCUMENT) {
                 eventType = parser.next();
             }
@@ -284,8 +330,7 @@ abstract class StanzaHandler {
             xmppReader.setXPPFactory(factory);
             Element doc;
             try {
-                xmppReader.read(new StringReader(stanza));
-                doc = xmppReader.parseDocument().getRootElement();
+                doc = xmppReader.read(new StringReader(stanza)).getRootElement();
             } catch (Exception e) {
                 Log.error("Error parsing compression stanza: " + stanza, e);
                 connection.close();
