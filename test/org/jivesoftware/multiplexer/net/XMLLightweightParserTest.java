@@ -15,6 +15,8 @@ import junit.framework.TestCase;
 import org.apache.mina.common.ByteBuffer;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMPPPacketReader;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.StringReader;
 import java.nio.charset.Charset;
@@ -133,7 +135,19 @@ public class XMLLightweightParserTest extends TestCase {
         reader.setEncoding(CHARSET);
         Element doc = reader.read(new StringReader(parsedIQ)).getRootElement();
         assertNotNull("Failed to parse IQ stanza", doc);
+    }
 
+    public void testParsing() throws Exception {
+        String stanza = "<presence type=\"unavailable\" from=\"user11840@lachesis/tsung\" to=\"user11846@lachesis\"/>";
+
+        XmlPullParserFactory factory = XmlPullParserFactory.newInstance(MXParser.class.getName(), null);
+        factory.setNamespaceAware(true);
+
+        XMPPPacketReader xmppReader = new XMPPPacketReader();
+        xmppReader.setXPPFactory(factory);
+        Element doc = xmppReader.read(new StringReader(stanza)).getRootElement();
+        assertNotNull(doc);
+        assertEquals(stanza, doc.asXML());
     }
 
     protected void setUp() throws Exception {
