@@ -1,9 +1,8 @@
 /**
- * $RCSfile$
  * $Revision: $
  * $Date: $
  *
- * Copyright (C) 2006 Jive Software. All rights reserved.
+ * Copyright (C) 2007 Jive Software. All rights reserved.
  *
  * This software is published under the terms of the GNU Public License (GPL),
  * a copy of which is included in this distribution.
@@ -230,6 +229,10 @@ class XMLLightweightParser {
                             ("stream:stream>".equals(head.toString()) || ("?xml>".equals(head.toString())))) {
                         // Found closing stream:stream
                         int end = buffer.length() - readByte + (i + 1);
+                        // Skip LF, CR and other "weird" characters that could appear
+                        while (startLastMsg < end && '<' != buffer.charAt(startLastMsg)) {
+                            startLastMsg++;
+                        }
                         String msg = buffer.substring(startLastMsg, end);
                         foundMsg(msg);
                         startLastMsg = end;
