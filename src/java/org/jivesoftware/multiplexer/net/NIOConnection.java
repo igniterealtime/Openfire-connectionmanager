@@ -37,8 +37,6 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.security.KeyStore;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Implementation of {@link Connection} inteface specific for NIO connections when using
@@ -62,9 +60,8 @@ public class NIOConnection implements Connection {
     private Session session;
     private IoSession ioSession;
 
-    final private Map<ConnectionCloseListener, Object> listeners =
-            new HashMap<ConnectionCloseListener, Object>();
-    
+    private ConnectionCloseListener closeListener;
+
     /**
      * Deliverer to use when the connection is closed or was closed when delivering
      * a packet.
@@ -111,17 +108,22 @@ public class NIOConnection implements Connection {
         return !isClosed();
     }
 
-    public void registerCloseListener(ConnectionCloseListener listener, Object handbackMessage) {
+    public void registerCloseListener(ConnectionCloseListener listener, Object ignore) {
+        if (closeListener != null) {
+            throw new IllegalStateException("Close listener already configured");
+        }
         if (isClosed()) {
-            listener.onConnectionClose(handbackMessage);
+            listener.onConnectionClose(session);
         }
         else {
-            listeners.put(listener, handbackMessage);
+            closeListener = listener;
         }
     }
 
     public void removeCloseListener(ConnectionCloseListener listener) {
-        listeners.remove(listener);
+        if (closeListener == listener) {
+            closeListener = null;
+        }
     }
 
     public InetAddress getInetAddress() throws UnknownHostException {
@@ -178,14 +180,11 @@ public class NIOConnection implements Connection {
      * Used by subclasses to properly finish closing the connection.
      */
     private void notifyCloseListeners() {
-        synchronized (listeners) {
-            for (ConnectionCloseListener listener : listeners.keySet()) {
-                try {
-                    listener.onConnectionClose(listeners.get(listener));
-                }
-                catch (Exception e) {
-                    Log.error("Error notifying listener: " + listener, e);
-                }
+        if (closeListener != null) {
+            try {
+                closeListener.onConnectionClose(session);
+            } catch (Exception e) {
+                Log.error("Error notifying listener: " + closeListener, e);
             }
         }
     }
