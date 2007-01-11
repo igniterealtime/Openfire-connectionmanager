@@ -27,6 +27,17 @@ public class ClientSession extends Session {
 
     private static final String ETHERX_NAMESPACE = "http://etherx.jabber.org/streams";
     private static final String FLASH_NAMESPACE = "http://www.jabber.com/streams/flash";
+    private static ConnectionCloseListener closeListener;
+
+    static {
+        closeListener = new ConnectionCloseListener() {
+            public void onConnectionClose(Object handback) {
+                ClientSession session = (ClientSession) handback;
+                // Mark the session as closed
+                session.close(false);
+            }
+        };
+    }
 
     public static Session createSession(String serverName, XmlPullParser xpp, Connection connection)
             throws XmlPullParserException {
@@ -106,13 +117,7 @@ public class ClientSession extends Session {
         // Set the stream ID that identifies the client when forwarding traffic to a client fails
         ((ClientFailoverDeliverer) connection.getPacketDeliverer()).setStreamID(streamID);
         // Listen when the connection is closed
-        connection.registerCloseListener(new ConnectionCloseListener() {
-            public void onConnectionClose(Object handback) {
-                ClientSession session = (ClientSession) handback;
-                // Mark the session as closed
-                session.close(false);
-            }
-        }, session);
+        connection.registerCloseListener(closeListener, session);
         // Register that the new session is associated with the specified stream ID
         Session.addSession(streamID, session);
         // Send to the server that a new client session has been created
