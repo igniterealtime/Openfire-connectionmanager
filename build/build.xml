@@ -62,9 +62,9 @@
     <!-- ======================================================================================= -->
 
     <property name="version.major" value="3"/>
-    <property name="version.minor" value="1"/>
+    <property name="version.minor" value="2"/>
     <property name="version.revision" value="0"/>
-    <property name="version.extra" value=""/> <!-- For 'beta' or 'alpha' -->
+    <property name="version.extra" value="beta"/> <!-- For 'beta' or 'alpha' -->
     <property name="dist.prefix" value="connection_manager"/>
 
     <property file="${basedir}/build/build.properties"/>
