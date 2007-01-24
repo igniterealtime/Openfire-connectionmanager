@@ -118,6 +118,10 @@ abstract class StanzaHandler {
             session.close();
             return;
         }
+        // Ignore <?xml version="1.0"?> stanzas sent by clients
+        if (stanza.startsWith("<?xml")) {
+            return;
+        }
         // Reset XPP parser with new stanza
         parser.setInput(new StringReader(stanza));
         parser.next();
