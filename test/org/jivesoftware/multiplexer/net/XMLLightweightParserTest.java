@@ -150,6 +150,33 @@ public class XMLLightweightParserTest extends TestCase {
         assertEquals(stanza, doc.asXML());
     }
 
+    public void testWeirdChars() throws Exception {
+        //String stanza = "<message id=\"wXBU0-86\" to=\"derek@jivesoftware.com\" from=\"phone@jivesoftware.com/spark\" type=\"chat\"><body>© 2003 - 2007 by Monsters and Critics.com, WotR Ltd. All Rights Reserved. All photos are copyright their respective owners and are used under license or with permission. * Note M&C cannot be held responsible for the content on other Web Sites.</body><thread>5Yo2Kd</thread><x xmlns=\"jabber:x:event\"><offline/><composing/></x></message>";
+        String stanza = "<message id=\"wXBU0-86\" to=\"derek@jivesoftware.com\" from=\"phone@jivesoftware.com/spark\" type=\"chat\"><body>© 2003 - 2007 by Monsters and Critics.com, WotR Ltd. All Rights Reserved. All photos are copyright their respective owners and are used under license or with permission. * Note M\"&amp;C cannot be held responsible for the content on other Web Sites.</body><thread>5Yo2Kd</thread><x xmlns=\"jabber:x:event\"><offline/><composing/></x></message>";
+
+        XmlPullParserFactory factory = XmlPullParserFactory.newInstance(MXParser.class.getName(), null);
+        factory.setNamespaceAware(true);
+
+        XMPPPacketReader xmppReader = new XMPPPacketReader();
+        xmppReader.setXPPFactory(factory);
+        Element doc = xmppReader.read(new StringReader(stanza)).getRootElement();
+        assertNotNull(doc);
+        assertEquals(stanza, doc.asXML());
+    }
+
+    public void testEmptyElement() throws Exception {
+        String stanza = "<message/>";
+
+        XmlPullParserFactory factory = XmlPullParserFactory.newInstance(MXParser.class.getName(), null);
+        factory.setNamespaceAware(true);
+
+        XMPPPacketReader xmppReader = new XMPPPacketReader();
+        xmppReader.setXPPFactory(factory);
+        Element doc = xmppReader.read(new StringReader(stanza)).getRootElement();
+        assertNotNull(doc);
+        assertEquals(stanza, doc.asXML());
+    }
+
     protected void setUp() throws Exception {
         super.setUp();
         // Create parser
