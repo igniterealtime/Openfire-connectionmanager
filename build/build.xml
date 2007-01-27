@@ -206,6 +206,7 @@
             includeAntRuntime="no"
             debug="on"
             source="1.5"
+            target="1.5"
             >
             <src path="${src.java.dir}"/>
             <patternset refid="compile.sources"/>
@@ -336,6 +337,7 @@
             includeAntRuntime="no"
             debug="on"
             source="1.5"
+            target="1.5"
             >
             <src path="${src.test.java.dir}"/>
             <patternset refid="test.sources"/>
