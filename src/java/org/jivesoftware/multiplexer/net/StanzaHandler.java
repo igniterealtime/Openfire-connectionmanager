@@ -34,7 +34,6 @@ abstract class StanzaHandler {
      * The utf-8 charset for decoding and encoding Jabber packet streams.
      */
     protected static String CHARSET = "UTF-8";
-    private static final String STREAM_START = "<stream:stream";
     /**
      * Reuse the same factory for all the connections.
      */
@@ -92,7 +91,7 @@ abstract class StanzaHandler {
 
     public void process(String stanza, XmlPullParser parser) throws Exception {
 
-        boolean initialStream = stanza.startsWith(STREAM_START);
+        boolean initialStream = stanza.startsWith("<stream:stream") || stanza.startsWith("<flash:stream");
         if (!sessionCreated || initialStream) {
             if (!initialStream) {
                 // Ignore <?xml version="1.0"?>
