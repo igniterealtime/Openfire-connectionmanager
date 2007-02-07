@@ -111,7 +111,7 @@
     <property name="installer.unix_install_dir" value="connection_manager"/>
     <property name="installer.windows_install_dir" value="Connection Manager"/>
     <property name="installer.publisher" value="Jive Software"/>
-    <property name="installer.publisher_url" value="www.jivesoftware.org"/>
+    <property name="installer.publisher_url" value="www.igniterealtime.org"/>
     <property name="installer.file_prefix" value="${installer.app_short_name}"/>
     <property name="installer.release_root_path" value="${release.dest.dir}"/>
 
@@ -239,7 +239,7 @@
             <fileset dir="${src.dir}" includes="database/upgrade/**/*.sql"/>
             <zipgroupfileset dir="${lib.merge.dir}" includes="*.jar"/>
             <manifest>
-                <attribute name="Built-By" value="Jive Software (www.jivesoftware.org)"/>
+                <attribute name="Built-By" value="Jive Software (www.igniterealtime.org)"/>
             </manifest>
         </jar>
 
@@ -254,7 +254,7 @@
             <fileset dir="${lib.build.installer.dir}/images" includes="**/*.png"/>
             <manifest>
                 <attribute name="Main-Class" value="org.jivesoftware.multiplexer.starter.ServerStarter"/>
-                <attribute name="Built-By" value="Jive Software (www.jivesoftware.org)"/>
+                <attribute name="Built-By" value="Jive Software (www.igniterealtime.org)"/>
             </manifest>
         </jar>
         <!-- Copy application dependent files -->
