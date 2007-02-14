@@ -14,8 +14,10 @@ package org.jivesoftware.multiplexer;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.ExecutorThreadModel;
 import org.apache.mina.common.SimpleByteBufferAllocator;
+import org.apache.mina.common.ThreadModel;
 import org.apache.mina.filter.SSLFilter;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
+import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
@@ -42,10 +44,8 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Connection managers handle connections of clients that want to connect to a server. Each
@@ -148,7 +148,7 @@ public class ConnectionManager {
         name = JiveGlobals.getXMLProperty("xmpp.manager.name", StringUtils.randomString(5)).toLowerCase();
         serverName = JiveGlobals.getXMLProperty("xmpp.domain");
 
-        version = new Version(3, 2, 0, Version.ReleaseStatus.Release, 1);
+        version = new Version(3, 2, 1, Version.ReleaseStatus.Release, 1);
         if (serverName != null) {
             setupMode = false;
         }
@@ -344,17 +344,32 @@ public class ConnectionManager {
         // Create SocketAcceptor with correct number of processors
         sslSocketAcceptor = buildSocketAcceptor();
         // Customize thread model for c2s (old ssl port)
-        ExecutorThreadModel threadModel = ExecutorThreadModel.getInstance("client_ssl");
         int eventThreads = JiveGlobals.getIntProperty("xmpp.processor.threads.ssl", 16);
-        ThreadPoolExecutor eventExecutor = (ThreadPoolExecutor)threadModel.getExecutor();
+        ExecutorFilter executorFilter = new ExecutorFilter();
+        ThreadPoolExecutor eventExecutor = (ThreadPoolExecutor)executorFilter.getExecutor();
+        final ThreadFactory originalThreadFactory = eventExecutor.getThreadFactory();
+        ThreadFactory newThreadFactory = new ThreadFactory()
+        {
+            private final AtomicInteger threadId = new AtomicInteger( 0 );
+
+            public Thread newThread( Runnable runnable )
+            {
+                Thread t = originalThreadFactory.newThread( runnable );
+                t.setName("Old SSL executor thread - " + threadId.incrementAndGet() );
+                t.setDaemon( true );
+                return t;
+            }
+        };
+        eventExecutor.setThreadFactory( newThreadFactory );
         eventExecutor.setCorePoolSize(eventThreads + 1);
         eventExecutor.setMaximumPoolSize(eventThreads + 1);
         eventExecutor.setKeepAliveTime(60, TimeUnit.SECONDS);
 
-        sslSocketAcceptor.getDefaultConfig().setThreadModel(threadModel);
+        sslSocketAcceptor.getDefaultConfig().setThreadModel(ThreadModel.MANUAL);
         // Add the XMPP codec filter
         sslSocketAcceptor.getFilterChain().addFirst("xmpp", new ProtocolCodecFilter(new XMPPCodecFactory()));
-
+        sslSocketAcceptor.getFilterChain().addFirst("threadModel", executorFilter);
+                                                                  
         try {
             // Add the SSL filter now since sockets are "borned" encrypted in the old ssl method
             SSLContext sslContext = SSLContext.getInstance(algorithm);
