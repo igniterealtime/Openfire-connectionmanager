@@ -14,6 +14,7 @@ package org.jivesoftware.multiplexer.net;
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
+import org.apache.mina.filter.codec.ProtocolDecoderException;
 import org.jivesoftware.multiplexer.Connection;
 import org.jivesoftware.multiplexer.ConnectionManager;
 import org.jivesoftware.multiplexer.PacketRouter;
@@ -97,6 +98,10 @@ public abstract class ConnectionHandler extends IoHandlerAdapter {
         if (cause instanceof IOException) {
             // TODO Verify if there were packets pending to be sent and decide what to do with them
             Log.debug(cause);
+        }
+        else if (cause instanceof ProtocolDecoderException) {
+            Log.warn("Closing session due to exception: " + session, cause);
+            session.close();
         }
         else {
             Log.error(cause);
