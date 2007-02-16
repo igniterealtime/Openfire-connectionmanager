@@ -177,6 +177,53 @@ public class XMLLightweightParserTest extends TestCase {
         assertEquals(stanza, doc.asXML());
     }
 
+    public void testNestedElements() throws Exception {
+        String msg1 = "<message><message xmlns=\"e\">1</message></message>";
+        //String msg1 = "<message id=\"3W3We-84\" to=\"gato@localhost/IDEtalk\" type=\"chat\"><body>will update it...</body><thread>12jid1</thread><IDEtalk-data xmlns=\"http://idetalk.com/namespace/jabber\"><message xmlns=\"http://idetalk.com/namespace\" when=\"1171565295250\">will update it...</message></IDEtalk-data></message>";
+        in.putString(msg1, Charset.forName(CHARSET).newEncoder());
+        in.flip();
+        // Fill parser with byte buffer content and parse it
+        parser.read(in);
+        // Make verifications
+        assertTrue("Stream header is not being correctly parsed", parser.areThereMsgs());
+        String[] values = parser.getMsgs();
+        assertEquals("Wrong number of parsed stanzas", 1, values.length);
+        assertEquals("Wrong stanza was parsed", msg1, values[0]);
+    }
+
+    public void testIncompleteStanza() throws Exception {
+        String msg1 = "<message><something xmlns=\"http://idetalk.com/namespace\">12";
+        in.putString(msg1, Charset.forName(CHARSET).newEncoder());
+        in.flip();
+        // Fill parser with byte buffer content and parse it
+        parser.read(in);
+        // Make verifications
+        assertFalse("Found messages in incomplete stanza", parser.areThereMsgs());
+    }
+
+    public void testCompletedStanza() throws Exception {
+        String msg1 = "<message><something xmlns=\"http://idetalk.com/namespace\">12";
+        in.putString(msg1, Charset.forName(CHARSET).newEncoder());
+        in.flip();
+        // Fill parser with byte buffer content and parse it
+        parser.read(in);
+        // Make verifications
+        assertFalse("Found messages in incomplete stanza", parser.areThereMsgs());
+
+        String msg2 = "</something></message>";
+        ByteBuffer in2 = ByteBuffer.allocate(4096);
+        in2.setAutoExpand(true);
+        in2.putString(msg2, Charset.forName(CHARSET).newEncoder());
+        in2.flip();
+        // Fill parser with byte buffer content and parse it
+        parser.read(in2);
+        in2.release();
+        assertTrue("Stream header is not being correctly parsed", parser.areThereMsgs());
+        String[] values = parser.getMsgs();
+        assertEquals("Wrong number of parsed stanzas", 1, values.length);
+        assertEquals("Wrong stanza was parsed", msg1 + msg2, values[0]);
+    }
+
     protected void setUp() throws Exception {
         super.setUp();
         // Create parser
