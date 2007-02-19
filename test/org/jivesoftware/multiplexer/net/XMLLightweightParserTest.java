@@ -201,6 +201,28 @@ public class XMLLightweightParserTest extends TestCase {
         assertFalse("Found messages in incomplete stanza", parser.areThereMsgs());
     }
 
+    public void testStanzaWithSpecialChars() throws Exception {
+        String msg1 = "<message><something xmlns=\"http://idetalk.com/namespace\">12/</something></message>";
+        String msg2 = "<message><something xmlns=\"http://idetalk.com/namespace\">12///</something></message>";
+        String msg3 = "<message><something xmlns=\"http://idetalk.com/namespace\">12/\\/</something></message>";
+        String msg4 = "<message><something xmlns=\"http://idetalk.com/namespace\">http://idetalk.com/namespace/</something></message>";
+        in.putString(msg1, Charset.forName(CHARSET).newEncoder());
+        in.putString(msg2, Charset.forName(CHARSET).newEncoder());
+        in.putString(msg3, Charset.forName(CHARSET).newEncoder());
+        in.putString(msg4, Charset.forName(CHARSET).newEncoder());
+        in.flip();
+        // Fill parser with byte buffer content and parse it
+        parser.read(in);
+        // Make verifications
+        assertTrue("No messages were found in stanza", parser.areThereMsgs());
+        String[] values = parser.getMsgs();
+        assertEquals("Wrong number of parsed stanzas", 4, values.length);
+        assertEquals("Wrong stanza was parsed", msg1, values[0]);
+        assertEquals("Wrong stanza was parsed", msg2, values[1]);
+        assertEquals("Wrong stanza was parsed", msg3, values[2]);
+        assertEquals("Wrong stanza was parsed", msg4, values[3]);
+    }
+
     public void testCompletedStanza() throws Exception {
         String msg1 = "<message><something xmlns=\"http://idetalk.com/namespace\">12";
         in.putString(msg1, Charset.forName(CHARSET).newEncoder());
