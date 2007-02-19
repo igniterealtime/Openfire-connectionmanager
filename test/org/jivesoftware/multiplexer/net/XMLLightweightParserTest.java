@@ -246,6 +246,28 @@ public class XMLLightweightParserTest extends TestCase {
         assertEquals("Wrong stanza was parsed", msg1 + msg2, values[0]);
     }
 
+    public void testStanzaWithComments() throws Exception {
+        String msg1 = "<iq from=\"lg@jivesoftware.com/spark\"><query xmlns=\"jabber:iq:privacy\"><!-- silly comment --></query></iq>";
+        in.putString(msg1, Charset.forName(CHARSET).newEncoder());
+        in.flip();
+        // Fill parser with byte buffer content and parse it
+        parser.read(in);
+        // Make verifications
+        assertTrue("No messages were found in stanza", parser.areThereMsgs());
+        String[] values = parser.getMsgs();
+        assertEquals("Wrong number of parsed stanzas", 1, values.length);
+        assertEquals("Wrong stanza was parsed", msg1, values[0]);
+
+        XmlPullParserFactory factory = XmlPullParserFactory.newInstance(MXParser.class.getName(), null);
+        factory.setNamespaceAware(true);
+
+        XMPPPacketReader xmppReader = new XMPPPacketReader();
+        xmppReader.setXPPFactory(factory);
+        Element doc = xmppReader.read(new StringReader(values[0])).getRootElement();
+        assertNotNull(doc);
+        assertEquals(msg1, doc.asXML());
+    }
+
     protected void setUp() throws Exception {
         super.setUp();
         // Create parser
