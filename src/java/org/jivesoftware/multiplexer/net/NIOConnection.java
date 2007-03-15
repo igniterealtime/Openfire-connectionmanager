@@ -139,7 +139,7 @@ public class NIOConnection implements Connection {
         synchronized (this) {
             if (!isClosed()) {
                 try {
-                    deliverRawText(flashClient ? "</flash:stream>" : "</stream:stream>");
+                    deliverRawText(flashClient ? "</flash:stream>" : "</stream:stream>", false);
                 } catch (Exception e) {
                     // Ignore
                 }
@@ -250,6 +250,11 @@ public class NIOConnection implements Connection {
     }
 
     public void deliverRawText(String text) {
+        // Deliver the packet in asynchronous mode
+        deliverRawText(text, true);
+    }
+
+    public void deliverRawText(String text, boolean asynchronous) {
         if (!isClosed()) {
             ByteBuffer buffer = ByteBuffer.allocate(text.length());
             buffer.setAutoExpand(true);
@@ -263,8 +268,17 @@ public class NIOConnection implements Connection {
                     buffer.put((byte) '\0');
                 }
                 buffer.flip();
-                //System.out.println("SENT: " + text);
-                ioSession.write(buffer);
+                if (asynchronous) {
+                    ioSession.write(buffer);
+                }
+                else {
+                    // Send stanza and wait for ACK (using a 2 seconds default timeout)
+                    boolean ok =
+                            ioSession.write(buffer).join(JiveGlobals.getIntProperty("connection.ack.timeout", 2000));
+                    if (!ok) {
+                        Log.warn("No ACK was received when sending stanza to: " + this.toString());
+                    }
+                }
             }
             catch (Exception e) {
                 Log.debug("Error delivering raw text" + "\n" + this.toString(), e);
