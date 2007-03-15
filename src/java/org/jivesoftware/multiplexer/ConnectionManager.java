@@ -148,7 +148,7 @@ public class ConnectionManager {
         name = JiveGlobals.getXMLProperty("xmpp.manager.name", StringUtils.randomString(5)).toLowerCase();
         serverName = JiveGlobals.getXMLProperty("xmpp.domain");
 
-        version = new Version(3, 2, 2, Version.ReleaseStatus.Release, 1);
+        version = new Version(3, 2, 3, Version.ReleaseStatus.Release, 1);
         if (serverName != null) {
             setupMode = false;
         }
@@ -253,7 +253,7 @@ public class ConnectionManager {
         SocketSendingTracker.getInstance().start();
         // Check if we need to configure MINA to use Direct or Heap Buffers
         // Note: It has been reported that heap buffers are 50% faster than direct buffers
-        if (JiveGlobals.getBooleanProperty("xmpp.socket.directBuffer", false)) {
+        if (!JiveGlobals.getBooleanProperty("xmpp.socket.directBuffer", false)) {
             ByteBuffer.setUseDirectBuffers(false);
             ByteBuffer.setAllocator(new SimpleByteBufferAllocator());
         }
