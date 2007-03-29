@@ -268,6 +268,35 @@ public class XMLLightweightParserTest extends TestCase {
         assertEquals(msg1, doc.asXML());
     }
 
+    public void testWeirdoContent() throws Exception {
+        final String[] testStanzas =
+        {
+                "<?xml version=\"1.0\"?>",
+                "<stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" xmlns=\"jabber:client\" to=\"localhost\" >",
+                "<emppartag test=\"1\"/>",
+                "<cdatatest><![CDATA[just<ignore everything& >>here<<<<< /> />]]&gt;]]></cdatatest>",
+                "<esctest param=\"1\"> this \" is / a test /> test /> </esctest>",
+                "<comtest>this <!-- comment --> is a comment</comtest>",
+                "<emptag/>",
+                "<iq type=\"get\" id=\"aab1a\" ><query xmlns=\"jabber:iq:roster\"/> <tag> text </tag></iq>",
+                "<iq type=\"get\" id=\"aab1a\" ><query xmlns=\"jabber:iq:roster\"/> </iq>",
+                "<message><body xmlns=\"http://idetalk.com/namespace\">12\"</body></message>" ,
+                "<message to=\"lg@jivesoftware.com\" id=\"XRk8p-X\"><body> /> /> </body></message>" ,
+        };
+        String testMsg = "";
+        for(String s : testStanzas) {
+            testMsg += s;
+        }
+        ByteBuffer mybuffer = ByteBuffer.wrap(testMsg.getBytes());
+        parser.read(mybuffer);
+
+        String[] msgs = parser.getMsgs();
+        for(int i = 0; i < testStanzas.length; i++) {
+            assertTrue(i < msgs.length);
+            assertEquals(testStanzas[i], msgs[i]);
+        }
+    }
+
     protected void setUp() throws Exception {
         super.setUp();
         // Create parser
