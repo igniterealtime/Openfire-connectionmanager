@@ -148,7 +148,7 @@ public class ConnectionManager {
         name = JiveGlobals.getXMLProperty("xmpp.manager.name", StringUtils.randomString(5)).toLowerCase();
         serverName = JiveGlobals.getXMLProperty("xmpp.domain");
 
-        version = new Version(3, 2, 3, Version.ReleaseStatus.Release, 1);
+        version = new Version(3, 2, 4, Version.ReleaseStatus.Release, 1);
         if (serverName != null) {
             setupMode = false;
         }
