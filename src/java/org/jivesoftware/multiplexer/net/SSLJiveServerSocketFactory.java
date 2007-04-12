@@ -26,7 +26,7 @@ import java.security.KeyStore;
  * Securue socket factory wrapper allowing simple setup of all security
  * SSL related parameters.<p>
  *
- * This class was copied from Wildfire.
+ * This class was copied from Openfire.
  *
  * @author Gaston Dombiak
  */

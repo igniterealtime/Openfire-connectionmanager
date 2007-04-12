@@ -21,7 +21,7 @@ import java.io.Reader;
  * MXParser that returns an IGNORABLE_WHITESPACE event when a whitespace character or a
  * line feed is received. This parser is useful when not validating documents.<p>
  *
- * This class was copied from Wildfire.
+ * This class was copied from Openfire.
  *
  * @author Gaston Dombiak
  */

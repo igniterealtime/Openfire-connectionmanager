@@ -244,7 +244,7 @@ public class ServerSurrogate {
     /**
      * Sets whether compression is enabled or is disabled.<p>
      *
-     * Note: Connection managers share the same code from Wildfire so the same compression
+     * Note: Connection managers share the same code from Openfire so the same compression
      * algorithms will be offered.
      * // TODO When used with other server we need to store the available algorithms.
      *

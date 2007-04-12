@@ -28,7 +28,7 @@ import java.text.DateFormat;
  * XML property names must be in the form <code>prop.name</code> - parts of the name must
  * be seperated by ".". The value can be any valid String, including strings with line breaks.<p>
  *
- * This class was copied from Wildfire. Properties stored in the DB were removed from the code.
+ * This class was copied from Openfire. Properties stored in the DB were removed from the code.
  * Modified #getBooleanProperty to use properties stored in XML.
  */
 public class JiveGlobals {

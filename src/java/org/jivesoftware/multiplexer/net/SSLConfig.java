@@ -23,9 +23,9 @@ import java.net.ServerSocket;
 import java.security.KeyStore;
 
 /**
- * Configuration of Wildfire's SSL settings.<p>
+ * Configuration of Openfire's SSL settings.<p>
  *
- * This class was copied from Wildfire. Properties are now stored in XML.
+ * This class was copied from Openfire. Properties are now stored in XML.
  *
  * @author Gaston Dombiak
  */

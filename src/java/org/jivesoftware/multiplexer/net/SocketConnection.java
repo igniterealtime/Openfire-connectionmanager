@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * An object to track the state of a XMPP client-server session. Currently this class
  * contains the socket channel connecting the client and server.<p>
  *
- * This class was copied from Wildfire. PacketInterceptors were removed. Session concept was
+ * This class was copied from Openfire. PacketInterceptors were removed. Session concept was
  * removed. ConnectionCloseListeners were removed.
  *
  * @author Gaston Dombiak

@@ -142,7 +142,7 @@ public class ServerStarter {
                 String jarName = packedFile.getName().substring(0,
                         packedFile.getName().length() - ".pack".length());
                 // Delete JAR file with same name if it exists (could be due to upgrade
-                // from old Wildfire release).
+                // from old Openfire release).
                 File jarFile = new File(libDir, jarName);
                 if (jarFile.exists()) {
                     jarFile.delete();
