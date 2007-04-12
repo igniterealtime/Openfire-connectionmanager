@@ -162,7 +162,10 @@
         <!-- Check for min build requirements -->
         <condition property="ant.not.ok" value="true">
             <not>
-                <contains string="${ant.version}" substring="1.6"/>
+                <or>
+                    <contains string="${ant.version}" substring="1.6"/>
+                    <contains string="${ant.version}" substring="1.7"/>
+                </or>
             </not>
         </condition>
         <condition property="java.not.ok" value="true">
