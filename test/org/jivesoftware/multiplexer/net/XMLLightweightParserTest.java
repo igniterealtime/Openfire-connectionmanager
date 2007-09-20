@@ -12,6 +12,7 @@
 package org.jivesoftware.multiplexer.net;
 
 import junit.framework.TestCase;
+import junit.framework.Assert;
 import org.apache.mina.common.ByteBuffer;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
@@ -294,6 +295,32 @@ public class XMLLightweightParserTest extends TestCase {
         for(int i = 0; i < testStanzas.length; i++) {
             assertTrue(i < msgs.length);
             assertEquals(testStanzas[i], msgs[i]);
+        }
+    }
+
+    public void testRead() {
+        try {
+            XMLLightweightParser parser = new XMLLightweightParser("UTF-8");
+            String xml1 = "<ab>\u1000</a";
+            String xml2 = "b>";
+            ByteBuffer buffer1 = ByteBuffer.wrap(xml1.getBytes("UTF-8"));
+            ByteBuffer buffer2 = ByteBuffer.wrap(xml2.getBytes("UTF-8"));
+
+            parser.read(buffer1);
+            parser.read(buffer2);
+
+            if (!parser.areThereMsgs())
+                Assert.fail("No messages found");
+
+            String msgs[] = parser.getMsgs();
+            if (msgs.length > 1) {
+                Assert.fail("More than one message found");
+            }
+            else {
+                Assert.assertEquals(xml1 + xml2, msgs[0]);
+            }
+        } catch (Exception e) {
+            Assert.fail(e.getMessage());
         }
     }
 
