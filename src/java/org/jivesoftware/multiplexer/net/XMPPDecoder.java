@@ -3,7 +3,7 @@
  * $Revision: $
  * $Date: $
  *
- * Copyright (C) 2006 Jive Software. All rights reserved.
+ * Copyright (C) 2008 Jive Software. All rights reserved.
  *
  * This software is published under the terms of the GNU Public License (GPL),
  * a copy of which is included in this distribution.
@@ -36,6 +36,6 @@ public class XMPPDecoder extends CumulativeProtocolDecoder {
                 out.write(stanza);
             }
         }
-        return true;
+        return !in.hasRemaining();
     }
 }
