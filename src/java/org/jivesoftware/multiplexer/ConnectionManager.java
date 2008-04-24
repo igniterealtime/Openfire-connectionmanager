@@ -120,7 +120,6 @@ public class ConnectionManager {
     private ServerSurrogate serverSurrogate;
     private SocketAcceptor socketAcceptor;
     private SocketAcceptor sslSocketAcceptor;
-    private HttpBindManager httpBindManager;
 
     /**
      * Returns a singleton instance of ConnectionManager.
@@ -277,10 +276,7 @@ public class ConnectionManager {
         }
     }
 
-    private void startClientListeners(String localIPAddress) {
-        // TODO Does MINA uses MAX_PRIORITY for threads?
-        // TODO Are threads running as daemon? Can we stop de server?
-        // Start clients plain socket unless it's been disabled.
+    public int getClientListenerPort() {
         int port = 5222;
         // Check if old property is being used for storing c2s port
         if (JiveGlobals.getXMLProperty("xmpp.socket.plain.port") != null) {
@@ -290,6 +286,14 @@ public class ConnectionManager {
         else if (JiveGlobals.getXMLProperty("xmpp.socket.default.port") != null) {
             port = JiveGlobals.getIntProperty("xmpp.socket.default.port", 5222);
         }
+        return port;
+    }
+
+    private void startClientListeners(String localIPAddress) {
+        // TODO Does MINA uses MAX_PRIORITY for threads?
+        // TODO Are threads running as daemon? Can we stop de server?
+        // Start clients plain socket unless it's been disabled.
+        int port = getClientListenerPort();
         // Create SocketAcceptor with correct number of processors
         socketAcceptor = buildSocketAcceptor();
         // Customize Executor that will be used by processors to process incoming stanzas
@@ -419,32 +423,20 @@ public class ConnectionManager {
             return;
         }
 
-        int plainPort = JiveGlobals.getIntProperty("xmpp.httpbind.port.plain", 8080);
-        int sslPort = JiveGlobals.getIntProperty("xmpp.httpbind.port.secure", 8443);
-        httpBindManager = new HttpBindManager(serverName, plainPort, sslPort);
-
         try {
-            httpBindManager.startup();
+            HttpBindManager.getInstance().start();
         }
         catch (Exception e) {
-            httpBindManager = null;
-            System.err.println("Error starting http bind servlet " + plainPort + " and " + sslPort
-                    + ": " + e.getMessage());
             Log.error(LocaleUtils.getLocalizedString("admin.error.http.bind"), e);
         }
     }
 
     private void stopHttpBindServlet() {
-        if (httpBindManager != null) {
-            try {
-                httpBindManager.shutdown();
-            }
-            catch (Exception e) {
-                Log.error(e);
-            }
-            finally {
-                httpBindManager = null;
-            }
+        try {
+            HttpBindManager.getInstance().stop();
+        }
+        catch (Exception e) {
+            Log.error(e);
         }
     }
 

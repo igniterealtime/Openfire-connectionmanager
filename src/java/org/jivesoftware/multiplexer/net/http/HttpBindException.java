@@ -1,31 +1,33 @@
 /**
- * $RCSfile:  $
- * $Revision:  $
- * $Date:  $
+ * $RCSfile$
+ * $Revision: $
+ * $Date: $
  *
- * Copyright (C) 2006 Jive Software. All rights reserved.
- * This software is the proprietary information of Jive Software. Use is subject to license terms.
+ * Copyright (C) 2005-2008 Jive Software. All rights reserved.
+ *
+ * This software is published under the terms of the GNU Public License (GPL),
+ * a copy of which is included in this distribution, or a commercial license
+ * agreement with Jive.
  */
+
 package org.jivesoftware.multiplexer.net.http;
 
 /**
  *
  */
 public class HttpBindException extends Exception {
-    private boolean shouldCloseSession;
-    private int httpError;
+    private BoshBindingError error;
 
-    public HttpBindException(String message, boolean shouldCloseSession, int httpError) {
+    public HttpBindException(String message, BoshBindingError error) {
         super(message);
-        this.shouldCloseSession = shouldCloseSession;
-        this.httpError = httpError;
+        this.error = error;
     }
 
-    public int getHttpError() {
-        return httpError;
+    public BoshBindingError getBindingError() {
+        return error;
     }
 
     public boolean shouldCloseSession() {
-        return shouldCloseSession;
+        return error.getErrorType() == BoshBindingError.Type.terminal;
     }
 }
