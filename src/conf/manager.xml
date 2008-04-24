@@ -101,8 +101,29 @@
                 <ssl>16</ssl>
             </threads> -->
         </processor>
+        <!-- Configure http binding. -->
         <httpbind>
             <enabled>false</enabled>
+            <port>
+                <plain>7070</plain>
+                <secure>7443</secure>
+            </port>
+            <!-- Script syntax allows BOSH to be used in environments where clients may be restricted to using a particular server -->
+            <scriptSyntax>
+                <enabled>false</enabled>
+            </scriptSyntax>
+            <client>
+                <requests>
+                    <!-- Longest time (in seconds) to wait before responding to any request during the session -->
+                    <!-- <wait></wait> -->
+                    <!-- Maximum allowable seconds over which a client can send empty requests to the server -->
+                    <polling>5</polling>
+                    <!-- Limit number of simultaneous requests the client makes with the 'requests' attribute -->
+                    <max>2</max>
+                </requests>
+                <!-- Seconds a session has to be idle to be closed -->
+                <idle>30</idle>
+            </client>
         </httpbind>
     </xmpp>
     <!-- Configure debug logger. -->

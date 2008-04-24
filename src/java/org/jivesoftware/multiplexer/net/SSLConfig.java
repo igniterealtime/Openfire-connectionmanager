@@ -14,6 +14,9 @@ package org.jivesoftware.multiplexer.net;
 import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.Log;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.KeyManagerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -39,6 +42,7 @@ public class SSLConfig {
     private static String keyStoreLocation;
     private static String trustStoreLocation;
     private static String storeType;
+    private static SSLContext context;
 
     private SSLConfig() {
     }
@@ -74,6 +78,16 @@ public class SSLConfig {
 
             sslFactory = (SSLJiveServerSocketFactory)SSLJiveServerSocketFactory.getInstance(
                     algorithm, keyStore, trustStore);
+
+            context = SSLContext.getInstance(algorithm);
+
+            KeyManagerFactory keyFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyFactory.init(keyStore, SSLConfig.getKeyPassword().toCharArray());
+            TrustManagerFactory c2sTrustFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            c2sTrustFactory.init(trustStore);
+            context.init(keyFactory.getKeyManagers(),
+                c2sTrustFactory.getTrustManagers(),
+                new java.security.SecureRandom());
         }
         catch (Exception e) {
             Log.error("SSLConfig startup problem.\n" +
@@ -130,6 +144,15 @@ public class SSLConfig {
             throw new IOException();
         }
         return trustStore;
+    }
+
+    /**
+     * Get the SSLContext for c2s connections
+     *
+     * @return the SSLContext for c2s connections
+     */
+    public static SSLContext getSSLContext() {
+        return context;
     }
 
     public static void saveStores() throws IOException {

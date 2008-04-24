@@ -129,6 +129,20 @@ public class XMPPPacketReader {
     }
 
     /**
+     * <p>Reads a Document from the given stream</p>
+     *
+     * @param charSet the charSet that the input is encoded in
+     * @param in <code>InputStream</code> to read from.
+     * @return the newly created Document instance
+     * @throws DocumentException if an error occurs during parsing.
+     */
+    public Document read(String charSet, InputStream in)
+            throws DocumentException, IOException, XmlPullParserException
+    {
+        return read(createReader(in, charSet));
+    }
+
+    /**
      * <p>Reads a Document from the given <code>Reader</code></p>
      *
      * @param reader is the reader for the input
@@ -271,6 +285,23 @@ public class XMPPPacketReader {
         }
         catch (XmlPullParserException e) {}
         return lastActive > lastHeartbeat ? lastActive : lastHeartbeat;
+    }
+
+    /*
+     * DANIELE: Add parse document by string
+     */
+    public Document parseDocument(String xml) throws DocumentException {
+        /*
+        // Long way with reuse of DocumentFactory.
+        DocumentFactory df = getDocumentFactory();
+        SAXReader reader = new SAXReader( df );
+        Document document = reader.read( new StringReader( xml );*/
+
+        // Simple way
+        // TODO Optimize. Do not create a sax reader for each parsing
+        Document document = DocumentHelper.parseText(xml);
+
+        return document;
     }
 
     // Implementation methods
@@ -416,6 +447,10 @@ public class XMPPPacketReader {
      */
     protected Reader createReader(InputStream in) throws IOException {
         return new BufferedReader(new InputStreamReader(in));
+    }
+
+    private Reader createReader(InputStream in, String charSet) throws UnsupportedEncodingException {
+        return new BufferedReader(new InputStreamReader(in, charSet));
     }
 }
 

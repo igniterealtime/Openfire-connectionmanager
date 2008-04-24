@@ -1,22 +1,44 @@
 /**
- * $RCSfile:  $
- * $Revision:  $
- * $Date:  $
+ * $RCSfile$
+ * $Revision: $
+ * $Date: $
  *
- * Copyright (C) 2006 Jive Software. All rights reserved.
- * This software is the proprietary information of Jive Software. Use is subject to license terms.
+ * Copyright (C) 2005-2008 Jive Software. All rights reserved.
+ *
+ * This software is published under the terms of the GNU Public License (GPL),
+ * a copy of which is included in this distribution, or a commercial license
+ * agreement with Jive.
  */
+
 package org.jivesoftware.multiplexer.net.http;
 
-import org.jivesoftware.multiplexer.Session;
-
 /**
+ * Listens for HTTP binding session events.
  *
+ * @author Alexander Wenckus
  */
 public interface SessionListener {
-    public void connectionOpened(Session session, HttpConnection connection);
 
-    public void connectionClosed(Session session, HttpConnection connection);
+    /**
+     * A connection was opened.
+     *
+     * @param session the session.
+     * @param connection the connection.
+     */
+    public void connectionOpened(HttpSession session, HttpConnection connection);
 
-    public void sessionClosed(Session session);
+    /**
+     * A conneciton was closed.
+     *
+     * @param session the session.
+     * @param connection the connection.
+     */
+    public void connectionClosed(HttpSession session, HttpConnection connection);
+
+    /**
+     * A session ended.
+     *
+     * @param session the session.
+     */
+    public void sessionClosed(HttpSession session);
 }
