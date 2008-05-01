@@ -423,7 +423,7 @@ public final class HttpBindManager {
     /** Listens for changes to Jive properties that affect the HTTP server manager. */
     private class HttpServerPropertyListener implements PropertyEventListener {
 
-        public void propertySet(String property, Map params) {
+        public void propertySet(String property, Map<String, Object> params) {
             if (property.equalsIgnoreCase(HTTP_BIND_ENABLED)) {
                 doEnableHttpBind(Boolean.valueOf(params.get("value").toString()));
             }
@@ -451,7 +451,7 @@ public final class HttpBindManager {
             }
         }
 
-        public void propertyDeleted(String property, Map params) {
+        public void propertyDeleted(String property, Map<String, Object> params) {
             if (property.equalsIgnoreCase(HTTP_BIND_ENABLED)) {
                 doEnableHttpBind(HTTP_BIND_ENABLED_DEFAULT);
             }
@@ -463,10 +463,10 @@ public final class HttpBindManager {
             }
         }
 
-        public void xmlPropertySet(String property, Map params) {
+        public void xmlPropertySet(String property, Map<String, Object> params) {
         }
 
-        public void xmlPropertyDeleted(String property, Map params) {
+        public void xmlPropertyDeleted(String property, Map<String, Object> params) {
         }
     }
 

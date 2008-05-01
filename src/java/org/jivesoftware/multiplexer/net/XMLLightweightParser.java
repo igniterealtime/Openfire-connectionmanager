@@ -11,12 +11,16 @@
 package org.jivesoftware.multiplexer.net;
 
 import org.apache.mina.common.ByteBuffer;
+import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.Log;
+import org.jivesoftware.util.PropertyEventDispatcher;
+import org.jivesoftware.util.PropertyEventListener;
 
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This is a Light-Weight XML Parser.
@@ -30,6 +34,8 @@ import java.util.List;
  * @author Gaston Dombiak
  */
 class XMLLightweightParser {
+    private static final String MAX_PROPERTY_NAME = "xmpp.parser.buffer.size";
+    private static int maxBufferSize;
     // Chars that rappresent CDATA section start
     protected static char[] CDATA_START = {'<', '!', '[', 'C', 'D', 'A', 'T', 'A', '['};
     // Chars that rappresent CDATA section end
@@ -83,6 +89,13 @@ class XMLLightweightParser {
     protected boolean insideChildrenTag = false;
 
     Charset encoder;
+
+    static {
+        // Set default max buffer size to 1MB. If limit is reached then close connection
+        maxBufferSize = JiveGlobals.getIntProperty(MAX_PROPERTY_NAME, 1048576);
+        // Listen for changes to this property
+        PropertyEventDispatcher.addListener(new PropertyListener());
+    }
 
     public XMLLightweightParser(String charset) {
         encoder = Charset.forName(charset);
@@ -147,7 +160,7 @@ class XMLLightweightParser {
         invalidateBuffer();
         // Check that the buffer is not bigger than 1 Megabyte. For security reasons
         // we will abort parsing when 1 Mega of queued chars was found.
-        if (buffer.length() > 1048576) {
+        if (buffer.length() > maxBufferSize) {
             throw new Exception("Stopped parsing never ending stanza");
         }
         CharBuffer charBuffer = encoder.decode(byteBuffer.buf());
@@ -328,6 +341,32 @@ class XMLLightweightParser {
                 ("/stream:stream>".equals(head.toString()) || ("/flash:stream>".equals(head.toString())))) {
             // Found closing stream:stream
             foundMsg("</stream:stream>");
+        }
+    }
+
+    private static class PropertyListener implements PropertyEventListener {
+        public void propertySet(String property, Map<String, Object> params) {
+            if (MAX_PROPERTY_NAME.equals(property)) {
+                String value = (String) params.get("value");
+                if (value != null) {
+                    maxBufferSize = Integer.parseInt(value);
+                }
+            }
+        }
+
+        public void propertyDeleted(String property, Map<String, Object> params) {
+            if (MAX_PROPERTY_NAME.equals(property)) {
+                // Use default value when none was specified
+                maxBufferSize = 1048576;
+            }
+        }
+
+        public void xmlPropertySet(String property, Map<String, Object> params) {
+            // Do nothing
+        }
+
+        public void xmlPropertyDeleted(String property, Map<String, Object> params) {
+            // Do nothing
         }
     }
 }
