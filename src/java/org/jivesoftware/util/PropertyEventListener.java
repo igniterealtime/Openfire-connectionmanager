@@ -28,7 +28,7 @@ public interface PropertyEventListener {
      * @param property the property.
      * @param params event parameters.
      */
-    public void propertySet(String property, Map params);
+    public void propertySet(String property, Map<String, Object> params);
 
     /**
      * A property was deleted.
@@ -36,7 +36,7 @@ public interface PropertyEventListener {
      * @param property the deleted.
      * @param params event parameters.
      */
-    public void propertyDeleted(String property, Map params);
+    public void propertyDeleted(String property, Map<String, Object> params);
 
     /**
      * An XML property was set.
@@ -44,7 +44,7 @@ public interface PropertyEventListener {
      * @param property the property.
      * @param params event parameters.
      */
-    public void xmlPropertySet(String property, Map params);
+    public void xmlPropertySet(String property, Map<String, Object> params);
 
     /**
      * An XML property was deleted.
@@ -52,6 +52,6 @@ public interface PropertyEventListener {
      * @param property the property.
      * @param params event parameters.
      */
-    public void xmlPropertyDeleted(String property, Map params);
+    public void xmlPropertyDeleted(String property, Map<String, Object> params);
 
 }
