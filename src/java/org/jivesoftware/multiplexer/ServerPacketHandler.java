@@ -89,8 +89,32 @@ class ServerPacketHandler {
                 if (Log.isDebugEnabled()) {
                     Log.debug("IQ stanza of type RESULT was discarded: " + stanza.asXML());
                 }
+            } else if ("error".equals(type)) {
+                // Close session if child element is CREATE
+                Element wrapper = stanza.element("session");
+                if (wrapper != null) {
+                    String streamID = wrapper.attributeValue("id");
+                    // Check if the server is informing us that we need to close a session
+                    if (wrapper.element("create") != null) {
+                        // Get the session that matches the requested stream ID
+                        Session session = Session.getSession(streamID);
+                        if (session != null) {
+                            session.close();
+                        }
+                    } else {
+                        if (Log.isDebugEnabled()) {
+                            Log.debug("IQ stanza of type ERRROR was discarded: " + stanza.asXML());
+                        }
+                    }
+                } else {
+                    if (Log.isDebugEnabled()) {
+                        Log.debug("IQ stanza of type ERRROR was discarded: " + stanza.asXML());
+                    }
+                }
             } else {
-                Log.warn("IQ stanza with invalid type was discarded: " + stanza.asXML());
+                if (Log.isDebugEnabled()) {
+                    Log.debug("IQ stanza with invalid type was discarded: " + stanza.asXML());
+                }
             }
         } else if ("error".equals(tag) && "stream".equals(stanza.getNamespacePrefix())) {
             if (stanza.element("system-shutdown") != null) {

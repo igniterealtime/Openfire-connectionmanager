@@ -22,6 +22,7 @@ import org.jivesoftware.util.Log;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.net.InetAddress;
 
 /**
  * Surrogate of the main server where the Connection Manager is routing client
@@ -145,9 +146,10 @@ public class ServerSurrogate {
      * a notification to the main server.
      *
      * @param streamID the stream ID assigned by the connection manager to the new session.
+     * @param address the remote address of the connection.
      */
-    public void clientSessionCreated(final String streamID) {
-        threadPool.execute(new NewSessionTask(streamID));
+    public void clientSessionCreated(final String streamID, final InetAddress address) {
+        threadPool.execute(new NewSessionTask(streamID, address));
     }
 
     /**

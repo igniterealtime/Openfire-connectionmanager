@@ -18,6 +18,9 @@ import org.jivesoftware.util.Log;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 /**
  * Session that represents a client to server connection.
  *
@@ -121,7 +124,13 @@ public class ClientSession extends Session {
         // Register that the new session is associated with the specified stream ID
         Session.addSession(streamID, session);
         // Send to the server that a new client session has been created
-        serverSurrogate.clientSessionCreated(streamID);
+        InetAddress address = null;
+        try {
+            address = connection.getInetAddress();
+        } catch (UnknownHostException e) {
+            // Do nothing
+        }
+        serverSurrogate.clientSessionCreated(streamID, address);
 
         // Build the start packet response
         StringBuilder sb = new StringBuilder(200);

@@ -240,7 +240,7 @@ public class HttpSessionManager {
         Session.addSession(streamID, session);
         session.addSessionCloseListener(sessionListener);
         // Send to the server that a new client session has been created
-        serverSurrogate.clientSessionCreated(streamID);
+        serverSurrogate.clientSessionCreated(streamID, address);
         return session;
     }
 
