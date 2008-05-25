@@ -14,20 +14,20 @@ package org.jivesoftware.multiplexer.net.http;
 import org.dom4j.DocumentException;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
+import org.jivesoftware.multiplexer.ConnectionManager;
+import org.jivesoftware.multiplexer.ServerSurrogate;
+import org.jivesoftware.multiplexer.Session;
+import org.jivesoftware.multiplexer.StreamIDFactory;
 import org.jivesoftware.util.JiveConstants;
 import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.Log;
 import org.jivesoftware.util.TaskEngine;
-import org.jivesoftware.multiplexer.StreamIDFactory;
-import org.jivesoftware.multiplexer.ServerSurrogate;
-import org.jivesoftware.multiplexer.ConnectionManager;
-import org.jivesoftware.multiplexer.Session;
 
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.TimerTask;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages sessions for all users connecting to Openfire using the HTTP binding protocal,
@@ -240,7 +240,7 @@ public class HttpSessionManager {
         Session.addSession(streamID, session);
         session.addSessionCloseListener(sessionListener);
         // Send to the server that a new client session has been created
-        serverSurrogate.clientSessionCreated(streamID);
+        serverSurrogate.clientSessionCreated(streamID, address);
         return session;
     }
 

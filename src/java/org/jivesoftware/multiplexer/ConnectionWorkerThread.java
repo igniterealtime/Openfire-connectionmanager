@@ -27,6 +27,7 @@ import org.xmlpull.v1.XmlPullParser;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.security.MessageDigest;
@@ -384,14 +385,16 @@ public class ConnectionWorkerThread extends Thread {
      * Sends a notification to the main server that a new client session has been created.
      *
      * @param streamID the stream ID assigned by the connection manager to the new session.
+     * @param address the remote address of the client.
      */
-    public void clientSessionCreated(String streamID) {
+    public void clientSessionCreated(String streamID, InetAddress address) {
         StringBuilder sb = new StringBuilder(100);
         sb.append("<iq type='set' to='").append(serverName);
         sb.append("' from='").append(jidAddress);
         sb.append("' id='").append(String.valueOf(random.nextInt(1000) + "-" + sequence++));
         sb.append("'><session xmlns='http://jabber.org/protocol/connectionmanager' id='").append(streamID);
-        sb.append("'><create/></session></iq>");
+        sb.append("'><create><host name='").append(address.getHostName());
+        sb.append("' address='").append(address.getHostAddress()).append("'/></create></session></iq>");
         // Forward the notification to the server
         connection.deliver(sb.toString());
     }

@@ -197,7 +197,7 @@ public class NIOConnection implements Connection {
         if (session == null) {
             return !ioSession.isConnected();
         }
-        return session.getStatus() == Session.STATUS_CLOSED;
+        return session.getStatus() == Session.STATUS_CLOSED && !ioSession.isConnected();
     }
 
     public boolean isSecure() {
