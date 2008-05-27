@@ -117,15 +117,15 @@ class ServerPacketReader implements SocketStatistic {
         /**
          * Actual object responsible for handling incoming traffic.
          */
-        private ServerPacketHandler packetsHandler;
+        private ServerPacketHandler handler;
 
-        public ProcessStanzaTask(ServerPacketHandler packetsHandler, Element stanza) {
-            this.packetsHandler = packetsHandler;
+        public ProcessStanzaTask(ServerPacketHandler handler, Element stanza) {
+            this.handler = handler;
             this.stanza = stanza;
         }
 
         public void run() {
-            packetsHandler.handle(stanza);
+            handler.handle(stanza);
         }
     }
 }
