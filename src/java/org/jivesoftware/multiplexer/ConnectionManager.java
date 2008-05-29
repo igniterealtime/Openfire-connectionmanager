@@ -290,8 +290,10 @@ public class ConnectionManager {
     }
 
     private void startClientListeners(String localIPAddress) {
-        // TODO Does MINA uses MAX_PRIORITY for threads?
-        // TODO Are threads running as daemon? Can we stop de server?
+        if (!JiveGlobals.getBooleanProperty("xmpp.socket.default.active", true)) {
+            // Do not start listener if service is disabled
+            return;
+        }
         // Start clients plain socket unless it's been disabled.
         int port = getClientListenerPort();
         // Create SocketAcceptor with correct number of processors
@@ -339,6 +341,10 @@ public class ConnectionManager {
     }
 
     private void startClientSSLListeners(String localIPAddress) {
+        if (!JiveGlobals.getBooleanProperty("xmpp.socket.ssl.active", true)) {
+            // Do not start listener if service is disabled
+            return;
+        }
         // Start clients SSL unless it's been disabled.
         int port = JiveGlobals.getIntProperty("xmpp.socket.ssl.port", 5223);
         String algorithm = JiveGlobals.getXMLProperty("xmpp.socket.ssl.algorithm");

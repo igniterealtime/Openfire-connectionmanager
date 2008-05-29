@@ -26,6 +26,7 @@ import org.jivesoftware.util.StringUtils;
 import org.xmlpull.v1.XmlPullParser;
 
 import javax.net.ssl.SSLHandshakeException;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -119,26 +120,43 @@ public class ConnectionWorkerThread extends Thread {
 
     /**
      * Creates a new connection to the server
+     * 
+     * @return true if a connection to the server was established
      */
     private boolean createConnection() {
         String realHostname = null;
         int port =
                 JiveGlobals.getIntProperty("xmpp.port", DEFAULT_MULTIPLEX_PORT);
         Socket socket = new Socket();
-        try {
-            // Get the real hostname to connect to using DNS lookup of the specified hostname
-            DNSUtil.HostAddress address = DNSUtil.resolveXMPPServerDomain(serverName, port);
-            realHostname = address.getHost();
-            Log.debug("CM - Trying to connect to " + serverName + ":" + port +
-                    "(DNS lookup: " + realHostname + ":" + port + ")");
-            // Establish a TCP connection to the Receiving Server
-            socket.connect(new InetSocketAddress(realHostname, port), 20000);
-            Log.debug("CM - Plain connection to " + serverName + ":" + port + " successful");
+        if (JiveGlobals.getXMLProperty("xmpp.hostname") != null) {
+            String hostname = JiveGlobals.getXMLProperty("xmpp.hostname");
+            // Use the specified hostname and port to connect to the server
+            try {
+                Log.debug("CM - Trying to connect to server at " + hostname + ":" + port);
+                // Establish a TCP connection to the Receiving Server
+                socket.connect(new InetSocketAddress(hostname, port), 20000);
+                Log.debug("CM - Plain connection to server at " + hostname + ":" + port + " successful");
+            } catch (IOException e) {
+                Log.error("Error trying to connect to server at " + hostname + ":" + port, e);
+                return false;
+            }
         }
-        catch (Exception e) {
-            Log.error("Error trying to connect to server: " + serverName +
-                    "(DNS lookup: " + realHostname + ":" + port + ")", e);
-            return false;
+        else {
+            try {
+                // Get the real hostname to connect to using DNS lookup of the specified hostname
+                DNSUtil.HostAddress address = DNSUtil.resolveXMPPServerDomain(serverName, port);
+                realHostname = address.getHost();
+                Log.debug("CM - Trying to connect to " + serverName + ":" + port +
+                        "(DNS lookup: " + realHostname + ":" + port + ")");
+                // Establish a TCP connection to the Receiving Server
+                socket.connect(new InetSocketAddress(realHostname, port), 20000);
+                Log.debug("CM - Plain connection to " + serverName + ":" + port + " successful");
+            }
+            catch (Exception e) {
+                Log.error("Error trying to connect to server: " + serverName +
+                        "(DNS lookup: " + realHostname + ":" + port + ")", e);
+                return false;
+            }
         }
 
         try {

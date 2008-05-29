@@ -16,6 +16,9 @@
     <xmpp>
         <!-- Name of the server to connect. This property is required. -->
         <domain></domain>
+        <!-- IP address or hostname of the XMPP server. If not defined then a DNS SRV lookup
+        of the domain will be performed. -->
+        <!-- <hostname></hostname> -->
         <!-- TCP port to connect to the XMPP server on. -->
         <port>5262</port>
         <!-- Password to use to log into the server. This property is required. -->
@@ -56,6 +59,7 @@
         </client>
         <socket>
             <default>
+                <active>true</active>
                 <!-- Default port to use for plain/TLS client connections. -->
                 <port>5222</port>
             </default>
