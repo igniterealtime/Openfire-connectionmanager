@@ -8,9 +8,9 @@ commons-el.jar                      | Jetty 6.0.1 (1.0)
 commons-lang.jar		            | 2.3
 dom4j.jar                           | 1.6.1
 !jaxen.jar                          | 1.1 beta 4 (from DOM4J 1.6.1)
-jetty.jar                           | Jetty 6.1.9
-jetty-sslengine.jar                 | Jetty 6.1.9
-jetty-util.jar                      | Jetty 6.1.9
+jetty.jar                           | Jetty 6.1.10
+jetty-sslengine.jar                 | Jetty 6.1.10
+jetty-util.jar                      | Jetty 6.1.10
 junit.jar                           | 3.8.1
 jdic.jar                            | 0.9.1 (for windows only)
 jzlib.jar                           | 1.0.7
@@ -18,6 +18,6 @@ mina-core.jar                       | 1.1.7 (https://svn.apache.org/repos/asf/mi
 mina-filter-compression.jar         | 1.1.7 (https://svn.apache.org/repos/asf/mina/branches/1.1)
 mina-filter-ssl.jar                 | 1.1.7 (https://svn.apache.org/repos/asf/mina/branches/1.1)
 pack200task.jar                     | August 5, 2004
-servlet.jar                         | Jetty 6.1.9 (2.5)
+servlet.jar                         | Jetty 6.1.10 (2.5)
 xmltask.jar                         | 1.11
 xpp3.jar                            | XPP_3 1.1.4c
