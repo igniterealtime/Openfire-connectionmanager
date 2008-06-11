@@ -298,6 +298,32 @@ public class XMLLightweightParserTest extends TestCase {
         }
     }
 
+    public void testInvalidSurrogates() throws Exception {
+        byte[] one = ("<message><body xmlns=\"http://idetalk.com/namespace\">").getBytes();
+        byte[] two = {(byte) 0xed, (byte) 0xb3, (byte) 0xb1};
+        byte[] three = "</body></message>".getBytes();
+
+        byte[] message = new byte[one.length + two.length + three.length];
+        int j = 0;
+        for (byte b : one) {
+            message[j++] = b;
+        }
+        for (byte b : two) {
+            message[j++] = b;
+        }
+        for (byte b : three) {
+            message[j++] = b;
+        }
+
+        ByteBuffer mybuffer = ByteBuffer.wrap(message);
+        try {
+            parser.read(mybuffer);
+            fail("Failed to detect a low surrogate char without a preceding high surrogate");
+        } catch (Exception e) {
+            assertEquals("Incorrect exception was received", "Found low surrogate char without a preceding high surrogate", e.getMessage());
+        }
+    }
+
     public void testRead() {
         try {
             XMLLightweightParser parser = new XMLLightweightParser("UTF-8");
