@@ -196,8 +196,26 @@ class XMLLightweightParser {
         }
         // Robot.
         char ch;
+        boolean isHighSurrogate = false;
         for (int i = 0; i < readByte; i++) {
             ch = buf[i];
+            if (isHighSurrogate) {
+                if (Character.isLowSurrogate(ch)) {
+                    // Everything is fine. Clean up traces for surrogates
+                    isHighSurrogate = false;
+                }
+                else {
+                    // Trigger error. Found high surrogate not followed by low surrogate
+                    throw new Exception("Found high surrogate not followed by low surrogate");
+                }
+            }
+            else if (Character.isHighSurrogate(ch)) {
+                isHighSurrogate = true;
+            }
+            else if (Character.isLowSurrogate(ch)) {
+                // Trigger error. Found low surrogate char without a preceding high surrogate
+                throw new Exception("Found low surrogate char without a preceding high surrogate");
+            }
             if (status == XMLLightweightParser.TAIL) {
                 // Looking for the close tag
                 if (depth < 1 && ch == head.charAt(tailCount)) {
