@@ -167,6 +167,11 @@ class XMLLightweightParser {
         char[] buf = charBuffer.array();
         int readByte = charBuffer.remaining();
 
+        // Just return if nothing was read
+        if (readByte == 0) {
+            return;
+        }
+
         // Verify if the last received byte is an incomplete double byte character
         char lastChar = buf[readByte-1];
         if (lastChar >= 0xfff0) {
