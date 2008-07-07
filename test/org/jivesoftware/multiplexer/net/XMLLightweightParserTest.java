@@ -11,8 +11,8 @@
 
 package org.jivesoftware.multiplexer.net;
 
-import junit.framework.TestCase;
 import junit.framework.Assert;
+import junit.framework.TestCase;
 import org.apache.mina.common.ByteBuffer;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
@@ -301,6 +301,37 @@ public class XMLLightweightParserTest extends TestCase {
     public void testInvalidSurrogates() throws Exception {
         byte[] one = ("<message><body xmlns=\"http://idetalk.com/namespace\">").getBytes();
         byte[] two = {(byte) 0xed, (byte) 0xb3, (byte) 0xb1};
+        byte[] three = "</body></message>".getBytes();
+
+        byte[] message = new byte[one.length + two.length + three.length];
+        int j = 0;
+        for (byte b : one) {
+            message[j++] = b;
+        }
+        for (byte b : two) {
+            message[j++] = b;
+        }
+        for (byte b : three) {
+            message[j++] = b;
+        }
+
+        ByteBuffer mybuffer = ByteBuffer.wrap(message);
+        try {
+            parser.read(mybuffer);
+            fail("Failed to detect a low surrogate char without a preceding high surrogate");
+        } catch (Exception e) {
+            assertEquals("Incorrect exception was received", "Found low surrogate char without a preceding high surrogate", e.getMessage());
+        }
+    }
+
+    /**
+     * Check that the parser does not accept characters below 0x20 (except for 9, A, and D)
+     *
+     * @throws Exception
+     */
+    public void testInvalidXML() throws Exception {
+        byte[] one = ("<message><body xmlns=\"http://idetalk.com/namespace\">").getBytes();
+        byte[] two = {(byte) 0x7 , (byte) 0x8};
         byte[] three = "</body></message>".getBytes();
 
         byte[] message = new byte[one.length + two.length + three.length];
