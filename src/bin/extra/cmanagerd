@@ -48,11 +48,32 @@ fi
 
 
 function execCommand() {
+  if [ "$1" == "start" ]; then
+	if [ -e /var/run/cmanager.pid ]; then
+		echo "cmanager already running" 2>&1
+		exit 1
+	fi
 	OLD_PWD=`pwd`
 	cd $CMANAGER_HOME/bin
 	CMD="./cmanager.sh $1"
 	su -c "$CMD" $CMANAGER_USER &
+	echo "$!" > /var/run/cmanager.pid
 	cd $OLD_PWD
+  elif [ "$1" == "stop" ]; then
+    if [ -e /var/run/cmanager.pid ]; then
+	if ps -p `cat /var/run/cmanager.pid` 2>/dev/null 1>&2; then
+		kill `cat /var/run/cmanager.pid`
+		if [ "$?" == 0 ]; then
+			rm -f /var/run/cmanager.pid
+		else
+			echo "kill failed. try again or kill manually" 1>&2
+		fi
+	fi
+	rm -f /var/run/cmanager.pid
+    else
+	echo "not running"
+    fi
+  fi
 }
 
 
@@ -63,6 +84,14 @@ start() {
 stop() {
 	execCommand "stop"
 }
+status() {
+  if [ -e /var/run/cmanager.pid ]; then
+    PID=`cat /var/run/cmanager.pid`
+    echo "running pid is $PID"
+  else
+    echo "not running"
+  fi
+}
 
 
 case "$1" in
@@ -72,8 +101,11 @@ case "$1" in
 	stop)
 		stop
 		;;
+	status)
+		status
+		;;
 	*)
-		echo "Usage $0 {start|stop}"
+		echo "Usage $0 {start|stop|status}"
 		exit 1
 esac
 
