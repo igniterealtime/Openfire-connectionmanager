@@ -298,6 +298,30 @@ public class XMLLightweightParserTest extends TestCase {
         }
     }
 
+    public void testAllowNullChars() throws Exception {
+        byte[] one = ("<message><body xmlns=\"http://idetalk.com/namespace\">").getBytes();
+        byte[] two = {(byte) 0x0};
+        byte[] three = "</body></message>".getBytes();
+
+        byte[] message = new byte[one.length + two.length + three.length];
+        int j = 0;
+        for (byte b : one) {
+            message[j++] = b;
+        }
+        for (byte b : two) {
+            message[j++] = b;
+        }
+        for (byte b : three) {
+            message[j++] = b;
+        }
+
+        ByteBuffer mybuffer = ByteBuffer.wrap(message);
+        parser.read(mybuffer);
+        String[] stanzas = parser.getMsgs();
+        assertEquals("Incorrect number of stanzas parsed", 1, stanzas.length);
+        assertEquals("Incorrect stanza parsed", "<message><body xmlns=\"http://idetalk.com/namespace\">\u0000</body></message>", stanzas[0]);
+    }
+
     public void testInvalidSurrogates() throws Exception {
         byte[] one = ("<message><body xmlns=\"http://idetalk.com/namespace\">").getBytes();
         byte[] two = {(byte) 0xed, (byte) 0xb3, (byte) 0xb1};
