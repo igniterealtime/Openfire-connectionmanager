@@ -123,7 +123,9 @@
           <root url="jar://$MODULE_DIR$/build/lib/merge/mina-filter-ssl.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../java/mina-1.2/filter-ssl/src/main/java" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">
@@ -132,7 +134,9 @@
           <root url="jar://$MODULE_DIR$/build/lib/merge/mina-core.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../java/mina-1.2/core/src/main/java" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">
@@ -141,7 +145,9 @@
           <root url="jar://$MODULE_DIR$/build/lib/merge/mina-filter-compression.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../java/mina-1.2/filter-compression/src/main/java" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">

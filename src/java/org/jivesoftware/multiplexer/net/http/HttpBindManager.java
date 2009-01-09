@@ -145,8 +145,18 @@ public final class HttpBindManager {
                 sslConnector.setTrustPassword(SSLConfig.getTrustPassword());
                 sslConnector.setTruststoreType(SSLConfig.getStoreType());
                 sslConnector.setTruststore(SSLConfig.getTruststoreLocation());
-                sslConnector.setNeedClientAuth(false);
-                sslConnector.setWantClientAuth(false);
+                // Set policy for checking client certificates
+                String certPol = JiveGlobals.getXMLProperty("xmpp.client.cert.policy", "disabled");
+                if(certPol.equals("needed")) {
+                    sslConnector.setNeedClientAuth(true);
+                    sslConnector.setWantClientAuth(true);
+                } else if(certPol.equals("wanted")) {
+                    sslConnector.setNeedClientAuth(false);
+                    sslConnector.setWantClientAuth(true);
+                } else {
+                    sslConnector.setNeedClientAuth(false);
+                    sslConnector.setWantClientAuth(false);
+                }
 
                 sslConnector.setKeyPassword(SSLConfig.getKeyPassword());
                 sslConnector.setKeystoreType(SSLConfig.getStoreType());
