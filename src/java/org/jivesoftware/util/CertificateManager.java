@@ -286,7 +286,7 @@ public class CertificateManager {
         for (Enumeration<String> aliases = ksKeys.aliases(); aliases.hasMoreElements();) {
             X509Certificate certificate = (X509Certificate) ksKeys.getCertificate(aliases.nextElement());
             for (String identity : getPeerIdentities(certificate)) {
-                if (identity.endsWith(domain) && certificate.getPublicKey().getAlgorithm().equals(algorithm)) {
+                if (("*".equals(domain) || identity.endsWith(domain)) && certificate.getPublicKey().getAlgorithm().equals(algorithm)) {
                     return true;
                 }
             }

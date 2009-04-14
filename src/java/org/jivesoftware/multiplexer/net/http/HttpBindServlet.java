@@ -13,6 +13,7 @@ package org.jivesoftware.multiplexer.net.http;
 
 import org.xmlpull.v1.XmlPullParserFactory;
 import org.xmlpull.v1.XmlPullParserException;
+import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.Log;
 import org.jivesoftware.multiplexer.net.MXParser;
 import org.dom4j.io.XMPPPacketReader;
@@ -20,6 +21,7 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.DocumentHelper;
+import org.dom4j.QName;
 import org.mortbay.util.ajax.ContinuationSupport;
 import org.apache.commons.lang.StringEscapeUtils;
 
@@ -33,6 +35,7 @@ import java.io.InputStream;
 import java.io.ByteArrayInputStream;
 import java.net.InetAddress;
 import java.net.URLDecoder;
+import java.util.Date;
 
 /**
  * Servlet which handles requests to the HTTP binding service. It determines if there is currently
@@ -97,9 +100,9 @@ public class HttpBindServlet extends HttpServlet {
             sendLegacyError(response, BoshBindingError.badRequest);
             return;
         }
-        queryString = URLDecoder.decode(queryString, "utf-8");
+        queryString = URLDecoder.decode(queryString, "UTF-8");
 
-        parseDocument(request, response, new ByteArrayInputStream(queryString.getBytes()));
+        parseDocument(request, response, new ByteArrayInputStream(queryString.getBytes("UTF-8")));
     }
 
     private void sendLegacyError(HttpServletResponse response, BoshBindingError error)
@@ -173,8 +176,12 @@ public class HttpBindServlet extends HttpServlet {
                            BoshBindingError bindingError, HttpSession session)
             throws IOException
     {
+    	if (JiveGlobals.getBooleanProperty("log.debug.enabled", false)) {
+    	    System.out.println(new Date()+": HTTP ERR("+session.getStreamID() + "): " + bindingError.getErrorType().getType() + ", " + bindingError.getCondition() + ".");
+    	}
         try {
-            if (session.getVersion() >= 1.6) {
+        	if ((session.getMajorVersion() == 1 && session.getMinorVersion() >= 6) || 
+        			session.getMajorVersion() > 1) {
                 respond(response, createErrorBody(bindingError.getErrorType().getType(),
                         bindingError.getCondition()), request.getMethod());
             }
@@ -183,7 +190,7 @@ public class HttpBindServlet extends HttpServlet {
             }
         }
         finally {
-            if (bindingError.getErrorType() == BoshBindingError.Type.terminal) {
+            if (bindingError.getErrorType() == BoshBindingError.Type.terminate) {
                 session.close();
             }
         }
@@ -201,6 +208,9 @@ public class HttpBindServlet extends HttpServlet {
                                       HttpServletResponse response, Element rootNode)
             throws IOException
     {
+    	if (JiveGlobals.getBooleanProperty("log.debug.enabled", false)) {
+            System.out.println(new Date()+": HTTP RECV(" + sid + "): " + rootNode.asXML());
+        }
         long rid = getLongAttribue(rootNode.attributeValue("rid"), -1);
         if (rid <= 0) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Body missing RID (Request ID)");
@@ -230,11 +240,28 @@ public class HttpBindServlet extends HttpServlet {
             }
 
             String type = rootNode.attributeValue("type");
+            String restartStream = rootNode.attributeValue(new QName("restart", rootNode.getNamespaceForPrefix("xmpp")));
+            int pauseDuration = getIntAttribue(rootNode.attributeValue("pause"), -1);
+            
             if ("terminate".equals(type)) {
                 session.close();
                 respond(response, createEmptyBody(), request.getMethod());
             }
+            else if ("true".equals(restartStream) && rootNode.elements().size() == 0) {
+            	try {
+            		respond(response, createSessionRestartResponse(session), request.getMethod());
+            	}
+            	catch (DocumentException e) {
+            		Log.error("Error sending session restart response to client.", e);
+            	}
+            }
+            else if (pauseDuration > 0 && pauseDuration <= session.getMaxPause()) {
+            	session.pause(pauseDuration);
+            	respond(response, createEmptyBody(), request.getMethod());
+            	session.setLastResponseEmpty(true);
+            }
             else {
+            	session.resetInactivityTimeout();
                 connection.setContinuation(ContinuationSupport.getContinuation(request, connection));
                 request.setAttribute("request-session", connection.getSession());
                 request.setAttribute("request", connection.getRequestId());
@@ -249,6 +276,22 @@ public class HttpBindServlet extends HttpServlet {
         }
     }
 
+	private String createSessionRestartResponse(HttpSession session) throws DocumentException {
+        Element response = DocumentHelper.createElement("body");
+        response.addNamespace("", "http://jabber.org/protocol/httpbind");
+        response.addNamespace("stream", "http://etherx.jabber.org/streams");
+
+        Element features = response.addElement("stream:features");
+        for (Element feature : session.getAvailableStreamFeaturesElements()) {
+        	if (JiveGlobals.getBooleanProperty("log.debug.enabled", false)) {
+                System.out.println(new Date()+": Adding stream feature " + feature.asXML());
+            }
+            features.add(feature);
+        }
+
+        return response.asXML();
+    }
+    
     private void createNewSession(HttpServletRequest request, HttpServletResponse response,
                                   Element rootNode)
             throws IOException
@@ -263,6 +306,9 @@ public class HttpBindServlet extends HttpServlet {
             HttpConnection connection = new HttpConnection(rid, request.isSecure());
             InetAddress address = InetAddress.getByName(request.getRemoteAddr());
             connection.setSession(sessionManager.createSession(address, rootNode, connection));
+            if (JiveGlobals.getBooleanProperty("log.debug.enabled", false)) {
+                System.out.println(new Date()+": HTTP RECV(" + connection.getSession().getStreamID() + "): " + rootNode.asXML());
+            }
             respond(response, connection, request.getMethod());
         }
         catch (HttpBindException e) {
@@ -280,6 +326,7 @@ public class HttpBindServlet extends HttpServlet {
         }
         catch (HttpBindTimeoutException e) {
             content = createEmptyBody();
+            connection.getSession().setLastResponseEmpty(true);
         }
 
         respond(response, content, method);
@@ -292,9 +339,18 @@ public class HttpBindServlet extends HttpServlet {
         response.setCharacterEncoding("utf-8");
 
         if ("GET".equals(method)) {
+        	if (JiveGlobals.getBooleanProperty("xmpp.httpbind.client.no-cache.enabled", true)) {
+                // Prevent caching of responses
+                response.addHeader("Cache-Control", "no-store");
+                response.addHeader("Cache-Control", "no-cache");
+                response.addHeader("Pragma", "no-cache");
+            }
             content = "_BOSH_(\"" + StringEscapeUtils.escapeJavaScript(content) + "\")";
         }
 
+        if (JiveGlobals.getBooleanProperty("log.debug.enabled", false)) {
+            System.out.println(new Date()+": HTTP SENT: " + content);
+        }
         byte[] byteContent = content.getBytes("utf-8");
         response.setContentLength(byteContent.length);
         response.getOutputStream().write(byteContent);
@@ -318,7 +374,19 @@ public class HttpBindServlet extends HttpServlet {
             return defaultValue;
         }
     }
-
+    
+    private int getIntAttribue(String value, int defaultValue) {
+        if (value == null || "".equals(value)) {
+            return defaultValue;
+        }
+        try {
+            return Integer.valueOf(value);
+        }
+        catch (Exception ex) {
+            return defaultValue;
+        }
+    }
+    
     private XMPPPacketReader getPacketReader() {
         // Reader is associated with a new XMPPPacketReader
         XMPPPacketReader reader = localReader.get();

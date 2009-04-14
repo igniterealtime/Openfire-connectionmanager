@@ -289,6 +289,12 @@ public class ConnectionManager {
         return port;
     }
 
+    public int getClientSSLListenerPort() {
+    	if(JiveGlobals.getBooleanProperty("xmpp.socket.ssl.active", true))
+        	return JiveGlobals.getIntProperty("xmpp.socket.ssl.port", 5223);
+        return 0;
+    }
+
     private void startClientListeners(String localIPAddress) {
         if (!JiveGlobals.getBooleanProperty("xmpp.socket.default.active", true)) {
             // Do not start listener if service is disabled

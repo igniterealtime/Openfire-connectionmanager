@@ -14,6 +14,7 @@ package org.jivesoftware.multiplexer.net.http;
 import org.dom4j.DocumentException;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
+import org.dom4j.QName;
 import org.jivesoftware.multiplexer.ConnectionManager;
 import org.jivesoftware.multiplexer.ServerSurrogate;
 import org.jivesoftware.multiplexer.Session;
@@ -118,18 +119,35 @@ public class HttpSessionManager {
 
         int wait = getIntAttribute(rootNode.attributeValue("wait"), 60);
         int hold = getIntAttribute(rootNode.attributeValue("hold"), 1);
-        double version = getDoubleAttribute(rootNode.attributeValue("ver"), 1.5);
 
+        String version = rootNode.attributeValue("ver");
+        if (version == null || "".equals(version)) {
+        	version = "1.5";
+        }
+        
         HttpSession session = createSession(connection.getRequestId(), address);
         session.setWait(Math.min(wait, getMaxWait()));
         session.setHold(hold);
         session.setSecure(connection.isSecure());
         session.setMaxPollingInterval(getPollingInterval());
         session.setMaxRequests(getMaxRequests());
-        session.setInactivityTimeout(getInactivityTimeout());
+        session.setMaxPause(getMaxPause());
+        
+        if(session.isPollingSession()) {
+        	session.setDefaultInactivityTimeout(getPollingInactivityTimeout());
+        }
+        else {
+        	session.setDefaultInactivityTimeout(getInactivityTimeout());
+        }
+    	session.resetInactivityTimeout();
+        
         // Store language and version information in the connection.
-        session.setLanaguage(language);
-        session.setVersion(version);
+        session.setLanguage(language);
+        
+        String [] versionString = version.split("\\.");
+        session.setMajorVersion(Integer.parseInt(versionString[0]));
+        session.setMinorVersion(Integer.parseInt(versionString[1]));
+        
         try {
             connection.deliverBody(createSessionCreationResponse(session));
         }
@@ -144,6 +162,16 @@ public class HttpSessionManager {
         return session;
     }
 
+    /**
+     * Returns the maximum length of a temporary session pause (in seconds) that the client MAY 
+     * request.
+     *
+     * @return the maximum length of a temporary session pause (in seconds) that the client MAY 
+     *         request.
+     */
+    public int getMaxPause() {
+        return JiveGlobals.getIntProperty("xmpp.httpbind.client.maxpause", 300);
+    }
 
     /**
      * Returns the longest time (in seconds) that Openfire is allowed to wait before responding to
@@ -187,7 +215,7 @@ public class HttpSessionManager {
     }
 
     /**
-     * Seconds a session has to be idle to be closed. Default is 30 minutes. Sending stanzas to the
+     * Seconds a session has to be idle to be closed. Default is 30. Sending stanzas to the
      * client is not considered as activity. We are only considering the connection active when the
      * client sends some data or hearbeats (i.e. whitespaces) to the server. The reason for this is
      * that sending data will fail if the connection is closed. And if the thread is blocked while
@@ -198,6 +226,20 @@ public class HttpSessionManager {
      */
     public int getInactivityTimeout() {
         return JiveGlobals.getIntProperty("xmpp.httpbind.client.idle", 30);
+    }
+
+    /**
+     * Seconds a polling session has to be idle to be closed. Default is 60. Sending stanzas to the
+     * client is not considered as activity. We are only considering the connection active when the
+     * client sends some data or hearbeats (i.e. whitespaces) to the server. The reason for this is
+     * that sending data will fail if the connection is closed. And if the thread is blocked while
+     * sending data (because the socket is closed) then the clean up thread will close the socket
+     * anyway.
+     *
+     * @return Seconds a polling session has to be idle to be closed.
+     */
+    public int getPollingInactivityTimeout() {
+        return JiveGlobals.getIntProperty("xmpp.httpbind.client.idle.polling", 60);
     }
 
     /**
@@ -222,8 +264,14 @@ public class HttpSessionManager {
             HttpConnectionClosedException
     {
         //noinspection unchecked
-        List<Element> elements = rootNode.elements();
-        HttpConnection connection = session.createConnection(rid, elements, isSecure);
+        List<Element> elements = rootNode.elements();boolean isPoll = (elements.size() == 0);
+    	if ("terminate".equals(rootNode.attributeValue("type")))
+    		isPoll = false;
+    	else if ("true".equals(rootNode.attributeValue(new QName("restart", rootNode.getNamespaceForPrefix("xmpp")))))
+    		isPoll = false;
+    	else if (rootNode.attributeValue("pause") != null)
+    		isPoll = false;
+        HttpConnection connection = session.createConnection(rid, elements, isSecure, isPoll);
         for (Element packet : elements) {
             serverSurrogate.send(packet.asXML(), session.getStreamID());
         }
@@ -279,8 +327,13 @@ public class HttpSessionManager {
         response.addAttribute("inactivity", String.valueOf(session.getInactivityTimeout()));
         response.addAttribute("polling", String.valueOf(session.getMaxPollingInterval()));
         response.addAttribute("wait", String.valueOf(session.getWait()));
-        if(session.getVersion() >= 1.6) {
-            response.addAttribute("ver", String.valueOf(session.getVersion()));
+        if ((session.getMajorVersion() == 1 && session.getMinorVersion() >= 6) ||
+        	session.getMajorVersion() > 1) {
+            response.addAttribute("hold", String.valueOf(session.getHold()));
+            response.addAttribute("ack", String.valueOf(session.getLastAcknowledged()));
+            response.addAttribute("maxpause", String.valueOf(session.getMaxPause()));
+            response.addAttribute("ver", String.valueOf(session.getMajorVersion())
+            		+ "." + String.valueOf(session.getMinorVersion()));
         }
 
         Element features = response.addElement("stream:features");
@@ -296,8 +349,8 @@ public class HttpSessionManager {
         public void run() {
             long currentTime = System.currentTimeMillis();
             for (HttpSession session : sessionMap.values()) {
-                long lastActive = (currentTime - session.getLastActivity()) / 1000;
-                if (lastActive > session.getInactivityTimeout()) {
+                long lastActive = currentTime - session.getLastActivity();
+                if (lastActive > session.getInactivityTimeout() * JiveConstants.SECOND) {
                     session.close();
                 }
             }
