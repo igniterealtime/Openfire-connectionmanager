@@ -62,7 +62,7 @@ if [ -z "$CMANAGER_HOME" -o ! -d "$CMANAGER_HOME" ]; then
 	#make it fully qualified
 	CMANAGER_HOME=`cd "$CMANAGER_HOME" && pwd`
 fi
-CMANAGER_OPTS="${CMANAGER_OPTS} -DmanagerHome=${CMANAGER_HOME}"
+CMANAGER_OPTS="${CMANAGER_OPTS} -DmanagerHome=\"${CMANAGER_HOME}\""
 
 
 # For Cygwin, ensure paths are in UNIX format before anything is touched
@@ -75,7 +75,7 @@ fi
 
 #set the CMANAGER_LIB location
 CMANAGER_LIB="${CMANAGER_HOME}/lib"
-CMANAGER_OPTS="${CMANAGER_OPTS} -Dcmanager.lib.dir=${CMANAGER_LIB}"
+CMANAGER_OPTS="${CMANAGER_OPTS} -Dcmanager.lib.dir=\"${CMANAGER_LIB}\""
 
 
 if [ -z "$JAVACMD" ] ; then

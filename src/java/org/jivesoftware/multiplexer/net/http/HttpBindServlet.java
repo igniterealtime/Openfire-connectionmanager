@@ -22,7 +22,7 @@ import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.DocumentHelper;
 import org.dom4j.QName;
-import org.mortbay.util.ajax.ContinuationSupport;
+import org.eclipse.jetty.continuation.ContinuationSupport;
 import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.servlet.http.HttpServlet;
@@ -262,7 +262,7 @@ public class HttpBindServlet extends HttpServlet {
             }
             else {
             	session.resetInactivityTimeout();
-                connection.setContinuation(ContinuationSupport.getContinuation(request, connection));
+                connection.setContinuation(ContinuationSupport.getContinuation(request));
                 request.setAttribute("request-session", connection.getSession());
                 request.setAttribute("request", connection.getRequestId());
                 try {
