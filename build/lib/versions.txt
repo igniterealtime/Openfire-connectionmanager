@@ -8,9 +8,15 @@ commons-el.jar                      | Jetty 6.0.1 (1.0)
 commons-lang.jar		            | 2.3
 dom4j.jar                           | 1.6.1
 !jaxen.jar                          | 1.1 beta 4 (from DOM4J 1.6.1)
-jetty.jar                           | Jetty 6.1.10
-jetty-sslengine.jar                 | Jetty 6.1.10
-jetty-util.jar                      | Jetty 6.1.10
+jetty-continuation.jar              | Jetty 7.0.1.v20091125
+jetty-http.jar                      | Jetty 7.0.1.v20091125
+jetty-io.jar                        | Jetty 7.0.1.v20091125
+jetty-security.jar                  | Jetty 7.0.1.v20091125
+jetty-server.jar                    | Jetty 7.0.1.v20091125
+jetty-servlet.jar                   | Jetty 7.0.1.v20091125
+jetty-util.jar                      | Jetty 7.0.1.v20091125
+jetty-webapp.jar                    | Jetty 7.0.1.v20091125
+jetty-xml.jar                       | Jetty 7.0.1.v20091125
 junit.jar                           | 3.8.1
 jdic.jar                            | 0.9.1 (for windows only)
 jzlib.jar                           | 1.0.7
