@@ -34,6 +34,7 @@ import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -142,21 +143,24 @@ public class ConnectionWorkerThread extends Thread {
             }
         }
         else {
-            try {
-                // Get the real hostname to connect to using DNS lookup of the specified hostname
-                DNSUtil.HostAddress address = DNSUtil.resolveXMPPServerDomain(serverName, port);
-                realHostname = address.getHost();
-                Log.debug("CM - Trying to connect to " + serverName + ":" + port +
-                        "(DNS lookup: " + realHostname + ":" + port + ")");
-                // Establish a TCP connection to the Receiving Server
-                socket.connect(new InetSocketAddress(realHostname, port), 20000);
-                Log.debug("CM - Plain connection to " + serverName + ":" + port + " successful");
+            // Get the real hostname to connect to using DNS lookup of the specified hostname
+            List<DNSUtil.HostAddress> addresses = DNSUtil.resolveXMPPDomain(serverName, port);
+            for (Iterator<DNSUtil.HostAddress> it = addresses.iterator(); it.hasNext(); ) {
+                try {
+                    realHostname = it.next().getHost();
+                    Log.debug("CM - Trying to connect to " + serverName + ":" + port +
+                            "(DNS lookup: " + realHostname + ":" + port + ")");
+                    // Establish a TCP connection to the Receiving Server
+                    socket.connect(new InetSocketAddress(realHostname, port), 20000);
+                    Log.debug("CM - Plain connection to " + serverName + ":" + port + " successful");
+                    return true;
+                }
+                catch (Exception e) {
+                    Log.error("Error trying to connect to server: " + serverName +
+                            "(DNS lookup: " + realHostname + ":" + port + ")", e);
+                }
             }
-            catch (Exception e) {
-                Log.error("Error trying to connect to server: " + serverName +
-                        "(DNS lookup: " + realHostname + ":" + port + ")", e);
-                return false;
-            }
+            return false;
         }
 
         try {
