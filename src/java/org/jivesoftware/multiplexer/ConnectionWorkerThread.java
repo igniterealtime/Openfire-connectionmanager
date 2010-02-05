@@ -153,7 +153,7 @@ public class ConnectionWorkerThread extends Thread {
                     // Establish a TCP connection to the Receiving Server
                     socket.connect(new InetSocketAddress(realHostname, port), 20000);
                     Log.debug("CM - Plain connection to " + serverName + ":" + port + " successful");
-                    return true;
+                    break;
                 }
                 catch (Exception e) {
                     Log.error("Error trying to connect to server: " + serverName +
