@@ -160,7 +160,9 @@ public class ConnectionWorkerThread extends Thread {
                             "(DNS lookup: " + realHostname + ":" + port + ")", e);
                 }
             }
-            return false;
+            if (!socket.isConnected()) {
+                return false;
+            }
         }
 
         try {
