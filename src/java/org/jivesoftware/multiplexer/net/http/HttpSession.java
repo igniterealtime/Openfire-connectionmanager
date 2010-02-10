@@ -903,6 +903,11 @@ public class HttpSession extends ClientSession {
             this.text = null;
             this.packets = new ArrayList<String>();
             for (Element packet : elements) {
+                if ("presence".equals(packet.getName()) ||
+                        "iq".equals(packet.getName()) ||
+                        "message".equals(packet.getName())) {
+                    packet.addNamespace("", "jabber:client");
+                }
                 this.packets.add(packet.asXML());
             }
         }
