@@ -10,14 +10,21 @@
 
 package org.jivesoftware.util;
 
-import org.jivesoftware.stringprep.IDNA;
-import org.jivesoftware.stringprep.Stringprep;
+import gnu.inet.encoding.IDNA;
+import gnu.inet.encoding.Stringprep;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.BreakIterator;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -1001,6 +1008,7 @@ public class StringUtils {
      * @param jid the JID address to validate.
      * @return true if the address is well-formed.
      */
+    // TODO replace with proper JID validation from Tinder. Possibly use Tinder as dependency of this project.
     public static boolean validateJID(String jid) {
         String node = null , domain, resource;
         if (jid == null) {
