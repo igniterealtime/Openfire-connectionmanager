@@ -20,6 +20,7 @@ jetty-xml.jar                       | Jetty 7.0.1.v20091125
 junit.jar                           | 3.8.1
 jdic.jar                            | 0.9.1 (for windows only)
 jzlib.jar                           | 1.0.7
+libidn								| 1.15
 mina-core.jar                       | 1.1.8 (https://svn.apache.org/repos/asf/mina/branches/1.1)
 mina-filter-compression.jar         | 1.1.8 (https://svn.apache.org/repos/asf/mina/branches/1.1)
 mina-filter-ssl.jar                 | 1.1.8 (https://svn.apache.org/repos/asf/mina/branches/1.1)
