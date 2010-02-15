@@ -33,7 +33,8 @@ public class RouteTask extends ClientTask {
         workerThread.deliver(stanza, streamID);
     }
 
-    public void serverNotAvailable() {
+    @Override
+	public void serverNotAvailable() {
         // Close client session indicating that the server is not available
         ClientSession.getSession(streamID).close(true);
     }

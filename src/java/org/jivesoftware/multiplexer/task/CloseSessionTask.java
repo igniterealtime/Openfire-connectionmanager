@@ -31,7 +31,8 @@ public class CloseSessionTask extends ClientTask {
         workerThread.clientSessionClosed(streamID);
     }
 
-    public void serverNotAvailable() {
+    @Override
+	public void serverNotAvailable() {
         // Do nothing;
     }
 }

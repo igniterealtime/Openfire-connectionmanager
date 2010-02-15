@@ -35,7 +35,8 @@ public class DeliveryFailedTask extends ClientTask {
         workerThread.deliveryFailed(stanza, streamID);
     }
 
-    public void serverNotAvailable() {
+    @Override
+	public void serverNotAvailable() {
         // Do nothing;
     }
 }

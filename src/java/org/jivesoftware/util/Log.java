@@ -417,7 +417,8 @@ public class Log {
 
     private static final class JiveLogHandler extends Handler {
 
-        public void publish(LogRecord record) {
+        @Override
+		public void publish(LogRecord record) {
 
             Level level = record.getLevel();
             Throwable throwable = record.getThrown();
@@ -467,11 +468,13 @@ public class Log {
             }
         }
 
-        public void flush() {
+        @Override
+		public void flush() {
             // do nothing
         }
 
-        public void close() throws SecurityException {
+        @Override
+		public void close() throws SecurityException {
             // do nothing
         }
     }

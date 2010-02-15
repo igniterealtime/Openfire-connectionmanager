@@ -36,7 +36,8 @@ public class NewSessionTask extends ClientTask {
         workerThread.clientSessionCreated(streamID, address);
     }
 
-    public void serverNotAvailable() {
+    @Override
+	public void serverNotAvailable() {
         // Close client session indicating that the server is not available
         ClientSession.getSession(streamID).close(true);
     }

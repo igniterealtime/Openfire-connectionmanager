@@ -26,6 +26,7 @@ import org.jivesoftware.util.log.Priority;
  * @author <a href="mailto:peter@apache.org">Peter Donald</a>
  * @deprecated Use LoggerOutputStream as this class was misnamed.
  */
+@Deprecated
 public class OutputStreamLogger
         extends LoggerOutputStream {
 
@@ -36,7 +37,8 @@ public class OutputStreamLogger
      * @param priority the priority at which to log
      * @deprecated Use LoggerOutputStream as this class was misnamed.
      */
-    public OutputStreamLogger(final Logger logger,
+    @Deprecated
+	public OutputStreamLogger(final Logger logger,
                               final Priority priority) {
         super(logger, priority);
     }

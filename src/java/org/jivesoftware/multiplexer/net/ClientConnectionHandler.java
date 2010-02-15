@@ -24,15 +24,18 @@ import org.xmlpull.v1.XmlPullParserException;
  */
 public class ClientConnectionHandler extends ConnectionHandler {
 
-    StanzaHandler createStanzaHandler(NIOConnection connection) throws XmlPullParserException {
+    @Override
+	StanzaHandler createStanzaHandler(NIOConnection connection) throws XmlPullParserException {
         return new ClientStanzaHandler(router, serverName, connection);
     }
 
-    NIOConnection createNIOConnection(IoSession session) {
+    @Override
+	NIOConnection createNIOConnection(IoSession session) {
         return new NIOConnection(session, new ClientFailoverDeliverer());
     }
 
-    int getMaxIdleTime() {
+    @Override
+	int getMaxIdleTime() {
         // Return 30 minuntes
         return JiveGlobals.getIntProperty("xmpp.client.idle", 30 * 60 * 1000) / 1000;
     }

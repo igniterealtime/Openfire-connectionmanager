@@ -52,7 +52,8 @@ public class AsyncLogTarget extends AbstractTarget implements Runnable {
      *
      * @param errorHandler the errorHandler
      */
-    public synchronized void setErrorHandler(final ErrorHandler errorHandler) {
+    @Override
+	public synchronized void setErrorHandler(final ErrorHandler errorHandler) {
         super.setErrorHandler(errorHandler);
 
         if (m_logTarget instanceof ErrorAware) {
@@ -65,7 +66,8 @@ public class AsyncLogTarget extends AbstractTarget implements Runnable {
      *
      * @param event the log event
      */
-    public void doProcessEvent(final LogEvent event) {
+    @Override
+	public void doProcessEvent(final LogEvent event) {
         synchronized (m_list) {
             final int size = m_list.size();
             while (m_queueSize <= size) {

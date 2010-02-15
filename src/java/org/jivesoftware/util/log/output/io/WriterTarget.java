@@ -55,7 +55,8 @@ public class WriterTarget extends AbstractOutputTarget {
      *
      * @param data the data to output
      */
-    protected void write(final String data) {
+    @Override
+	protected void write(final String data) {
         try {
             m_output.write(data);
             m_output.flush();
@@ -69,7 +70,8 @@ public class WriterTarget extends AbstractOutputTarget {
      * Shutdown target.
      * Attempting to send to target after close() will cause errors to be logged.
      */
-    public synchronized void close() {
+    @Override
+	public synchronized void close() {
         super.close();
         shutdownWriter();
     }

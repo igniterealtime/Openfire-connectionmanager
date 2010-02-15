@@ -46,7 +46,8 @@ public class PriorityFilter extends AbstractFilterTarget {
      * @param event the event
      * @return return true to discard event, false otherwise
      */
-    protected boolean filter(final LogEvent event) {
+    @Override
+	protected boolean filter(final LogEvent event) {
         return (!m_priority.isLower(event.getPriority()));
     }
 }

@@ -56,7 +56,8 @@ public class RotatingFileTarget extends FileTarget {
     /**
      * Output the log message, and check if rotation is needed.
      */
-    public synchronized void write(final String data) {
+    @Override
+	public synchronized void write(final String data) {
         // send the log message
         super.write(data);
 

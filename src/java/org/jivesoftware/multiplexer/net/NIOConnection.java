@@ -398,7 +398,8 @@ public class NIOConnection implements Connection {
         this.tlsPolicy = tlsPolicy;
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return super.toString() + " MINA Session: " + ioSession;
     }
 }

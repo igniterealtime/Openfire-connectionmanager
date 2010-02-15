@@ -84,7 +84,8 @@ public final class Priority implements Serializable {
      *
      * @return the string describing priority
      */
-    public String toString() {
+    @Override
+	public String toString() {
         return "Priority[" + getName() + "/" + getValue() + "]";
     }
 

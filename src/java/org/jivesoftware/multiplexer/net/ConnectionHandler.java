@@ -62,7 +62,8 @@ public abstract class ConnectionHandler extends IoHandlerAdapter {
         }
     }
 
-    public void sessionOpened(IoSession session) throws Exception {
+    @Override
+	public void sessionOpened(IoSession session) throws Exception {
         // Create a new XML parser for the new connection. The parser will be used by the XMPPDecoder filter.
         XMLLightweightParser parser = new XMLLightweightParser(CHARSET);
         session.setAttribute(XML_PARSER, parser);
@@ -77,14 +78,16 @@ public abstract class ConnectionHandler extends IoHandlerAdapter {
         }
     }
 
-    public void sessionClosed(IoSession session) throws Exception {
+    @Override
+	public void sessionClosed(IoSession session) throws Exception {
         // Get the connection for this session
         Connection connection = (Connection) session.getAttribute(CONNECTION);
         // Inform the connection that it was closed
         connection.close();
     }
 
-    public void sessionIdle(IoSession session, IdleStatus status) throws Exception {
+    @Override
+	public void sessionIdle(IoSession session, IdleStatus status) throws Exception {
         // Get the connection for this session
         Connection connection = (Connection) session.getAttribute(CONNECTION);
         // Close idle connection
@@ -94,7 +97,8 @@ public abstract class ConnectionHandler extends IoHandlerAdapter {
         connection.close();
     }
 
-    public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
+    @Override
+	public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
         if (cause instanceof IOException) {
             // TODO Verify if there were packets pending to be sent and decide what to do with them
             Log.debug(cause);
@@ -108,7 +112,8 @@ public abstract class ConnectionHandler extends IoHandlerAdapter {
         }
     }
 
-    public void messageReceived(IoSession session, Object message) throws Exception {
+    @Override
+	public void messageReceived(IoSession session, Object message) throws Exception {
         //System.out.println("RCVD: " + message);
         // Get the stanza handler for this session
         StanzaHandler handler = (StanzaHandler) session.getAttribute(HANDLER);

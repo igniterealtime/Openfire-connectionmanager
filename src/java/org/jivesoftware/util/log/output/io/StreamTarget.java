@@ -55,7 +55,8 @@ public class StreamTarget extends AbstractOutputTarget {
      *
      * @param data the data to be output
      */
-    protected synchronized void write(final String data) {
+    @Override
+	protected synchronized void write(final String data) {
         //Cache method local version
         //so that can be replaced in another thread
         final OutputStream outputStream = m_outputStream;
@@ -81,7 +82,8 @@ public class StreamTarget extends AbstractOutputTarget {
      * Shutdown target.
      * Attempting to send to target after close() will cause errors to be logged.
      */
-    public synchronized void close() {
+    @Override
+	public synchronized void close() {
         super.close();
         shutdownStream();
     }

@@ -458,7 +458,8 @@ public class ConnectionWorkerThread extends Thread {
         connection.deliver(sb.toString());
     }
 
-    public void run() {
+    @Override
+	public void run() {
         try {
             super.run();
         }

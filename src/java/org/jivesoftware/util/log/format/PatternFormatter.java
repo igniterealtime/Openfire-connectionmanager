@@ -125,7 +125,8 @@ public class PatternFormatter implements Formatter {
      * @deprecated Use constructor PatternFormatter(String pattern) as this does not
      *             correctly initialize object
      */
-    public PatternFormatter() {
+    @Deprecated
+	public PatternFormatter() {
     }
 
     public PatternFormatter(final String pattern) {
@@ -587,7 +588,8 @@ public class PatternFormatter implements Formatter {
      * @param format the string format
      * @deprecated Parse format in via constructor rather than use this method
      */
-    public void setFormat(final String format) {
+    @Deprecated
+	public void setFormat(final String format) {
         parse(format);
     }
 }

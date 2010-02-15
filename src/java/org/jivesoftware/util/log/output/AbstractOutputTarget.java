@@ -41,7 +41,8 @@ public abstract class AbstractOutputTarget
      * @deprecated Access to formatter is not advised and this method will be removed
      *             in future iterations. It remains only for backwards compatability.
      */
-    public synchronized Formatter getFormatter() {
+    @Deprecated
+	public synchronized Formatter getFormatter() {
         return m_formatter;
     }
 
@@ -51,7 +52,8 @@ public abstract class AbstractOutputTarget
      * @param formatter the formatter
      * @deprecated In future this method will become protected access.
      */
-    public synchronized void setFormatter(final Formatter formatter) {
+    @Deprecated
+	public synchronized void setFormatter(final Formatter formatter) {
         writeTail();
         m_formatter = formatter;
         writeHead();
@@ -73,10 +75,12 @@ public abstract class AbstractOutputTarget
      * @deprecated User should overide send() instead of output(). Output exists
      *             for backwards compatability and will be removed in future.
      */
-    protected void output(final String data) {
+    @Deprecated
+	protected void output(final String data) {
     }
 
-    protected void doProcessEvent(LogEvent event) {
+    @Override
+	protected void doProcessEvent(LogEvent event) {
         final String data = format(event);
         write(data);
     }
@@ -84,7 +88,8 @@ public abstract class AbstractOutputTarget
     /**
      * Startup log session.
      */
-    protected synchronized void open() {
+    @Override
+	protected synchronized void open() {
         if (!isOpen()) {
             super.open();
             writeHead();
@@ -95,7 +100,8 @@ public abstract class AbstractOutputTarget
      * Shutdown target.
      * Attempting to send to target after close() will cause errors to be logged.
      */
-    public synchronized void close() {
+    @Override
+	public synchronized void close() {
         if (isOpen()) {
             writeTail();
             super.close();

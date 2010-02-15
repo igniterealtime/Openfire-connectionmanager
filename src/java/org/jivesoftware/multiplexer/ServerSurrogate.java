@@ -89,7 +89,8 @@ public class ServerSurrogate {
         // Start thread that will send heartbeats to the server every 30 seconds
         // to keep connections to the server open.
         Thread hearbeatThread = new Thread() {
-            public void run() {
+            @Override
+			public void run() {
                 while (true) {
                     try {
                         Thread.sleep(30000);
@@ -319,7 +320,8 @@ public class ServerSurrogate {
                     handler);
         }
 
-        protected void beforeExecute(Thread thread, Runnable task) {
+        @Override
+		protected void beforeExecute(Thread thread, Runnable task) {
             super.beforeExecute(thread, task);
             ConnectionWorkerThread workerThread = (ConnectionWorkerThread) thread;
             // Check that the worker thread is valid. This means that it has a valid connection
@@ -334,7 +336,8 @@ public class ServerSurrogate {
             }
         }
 
-        public void shutdown() {
+        @Override
+		public void shutdown() {
             // Notify the server that the connection manager is being shut down
             execute(new Runnable() {
                 public void run() {

@@ -30,15 +30,18 @@ class ClientStanzaHandler extends StanzaHandler {
         super(router, serverName, connection);
     }
 
-    String getNamespace() {
+    @Override
+	String getNamespace() {
         return "jabber:client";
     }
 
-    boolean validateHost() {
+    @Override
+	boolean validateHost() {
         return JiveGlobals.getBooleanProperty("xmpp.client.validate.host",false);
     }
 
-    boolean createSession(String namespace, String serverName, XmlPullParser xpp, Connection connection)
+    @Override
+	boolean createSession(String namespace, String serverName, XmlPullParser xpp, Connection connection)
             throws XmlPullParserException {
         if ("jabber:client".equals(namespace)) {
             // The connected client is a regular client so create a ClientSession

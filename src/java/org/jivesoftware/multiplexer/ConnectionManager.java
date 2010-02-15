@@ -189,7 +189,8 @@ public class ConnectionManager {
             serverName = JiveGlobals.getXMLProperty("xmpp.domain").toLowerCase();
 
             Thread finishSetup = new Thread() {
-                public void run() {
+                @Override
+				public void run() {
                     try {
                         // Start modules
                         startModules();
@@ -741,7 +742,8 @@ public class ConnectionManager {
         /**
          * <p>Logs the server shutdown.</p>
          */
-        public void run() {
+        @Override
+		public void run() {
             shutdownServer();
             Log.info("Connection Manager halted");
             System.err.println("Connection Manager halted");
@@ -760,7 +762,8 @@ public class ConnectionManager {
         /**
          * <p>Shuts down the JVM after a 5 second delay.</p>
          */
-        public void run() {
+        @Override
+		public void run() {
             try {
                 Thread.sleep(5000);
                 // No matter what, we make sure it's dead

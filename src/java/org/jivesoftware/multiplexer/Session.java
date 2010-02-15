@@ -179,7 +179,8 @@ public abstract class Session {
 
     public abstract void deliver(Element stanza);
 
-    public String toString() {
+    @Override
+	public String toString() {
         return super.toString() + " status: " + status + " id: " + streamID;
     }
 

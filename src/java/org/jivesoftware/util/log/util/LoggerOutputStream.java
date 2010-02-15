@@ -57,7 +57,8 @@ public class LoggerOutputStream
     /**
      * Shutdown stream.
      */
-    public void close()
+    @Override
+	public void close()
             throws IOException {
         flush();
         super.close();
@@ -70,7 +71,8 @@ public class LoggerOutputStream
      * @param data the byte of data
      * @throws IOException if an error occurs
      */
-    public void write(final int data)
+    @Override
+	public void write(final int data)
             throws IOException {
         checkValid();
 
@@ -87,7 +89,8 @@ public class LoggerOutputStream
      *
      * @throws IOException if an error occurs
      */
-    public synchronized void flush()
+    @Override
+	public synchronized void flush()
             throws IOException {
         checkValid();
 

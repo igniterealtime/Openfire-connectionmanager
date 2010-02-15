@@ -51,7 +51,8 @@ public class HttpSession extends ClientSession {
         }
         // Create xmpp parser to keep in each thread
         localParser = new ThreadLocal<XMPPPacketReader>() {
-            protected XMPPPacketReader initialValue() {
+            @Override
+			protected XMPPPacketReader initialValue() {
                 XMPPPacketReader parser = new XMPPPacketReader();
                 factory.setNamespaceAware(true);
                 parser.setXPPFactory(factory);
@@ -123,7 +124,8 @@ public class HttpSession extends ClientSession {
         return elements;
     }
 
-    public String getAvailableStreamFeatures() {
+    @Override
+	public String getAvailableStreamFeatures() {
         StringBuilder sb = new StringBuilder(200);
         for (Element element : getAvailableStreamFeaturesElements()) {
             sb.append(element.asXML());
@@ -131,11 +133,13 @@ public class HttpSession extends ClientSession {
         return sb.toString();
     }
 
-    public void close() {
+    @Override
+	public void close() {
         closeConnection();
     }
 
-    public void close(boolean isServerShuttingDown) {
+    @Override
+	public void close(boolean isServerShuttingDown) {
         closeConnection();
     }
 
@@ -144,7 +148,8 @@ public class HttpSession extends ClientSession {
      *
      * @return true if this session has been closed and no longer activley accepting connections.
      */
-    public synchronized boolean isClosed() {
+    @Override
+	public synchronized boolean isClosed() {
         return isClosed;
     }
 
@@ -742,7 +747,8 @@ public class HttpSession extends ClientSession {
         }
     }
 
-    public void deliver(Element stanza) {
+    @Override
+	public void deliver(Element stanza) {
     	// Until session is not authenticated we need to inspect server traffic
         if (status != Session.STATUS_AUTHENTICATED) {
             String tag = stanza.getName();

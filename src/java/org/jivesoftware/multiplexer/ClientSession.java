@@ -190,7 +190,8 @@ public class ClientSession extends Session {
         super(serverName, connection, streamID);
     }
 
-    public String getAvailableStreamFeatures() {
+    @Override
+	public String getAvailableStreamFeatures() {
         // Offer authenticate and registration only if TLS was not required or if required
         // then the connection is already secured
         if (conn.getTlsPolicy() == Connection.TLSPolicy.required && !conn.isSecure()) {
@@ -231,7 +232,8 @@ public class ClientSession extends Session {
      *
      * @param stanza the stanza sent by the server.
      */
-    public void deliver(Element stanza) {
+    @Override
+	public void deliver(Element stanza) {
         // Until session is not authenticated we need to inspect server traffic
         if (status != Session.STATUS_AUTHENTICATED) {
             String tag = stanza.getName();
@@ -259,7 +261,8 @@ public class ClientSession extends Session {
         }
     }
 
-    public void close() {
+    @Override
+	public void close() {
         close(false);
     }
 
@@ -271,7 +274,8 @@ public class ClientSession extends Session {
      * @param systemStopped true when the server is no longer available or the
      *        connection manager is being shutdown.
      */
-    public void close(boolean systemStopped) {
+    @Override
+	public void close(boolean systemStopped) {
         if (status != STATUS_CLOSED) {
             // Change the status to closed
             status = STATUS_CLOSED;
@@ -289,7 +293,8 @@ public class ClientSession extends Session {
         }
     }
 
-    public boolean isClosed() {
+    @Override
+	public boolean isClosed() {
         return status == STATUS_CLOSED;
     }
 }

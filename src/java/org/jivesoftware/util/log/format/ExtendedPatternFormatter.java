@@ -43,7 +43,8 @@ public class ExtendedPatternFormatter extends PatternFormatter {
      * @param type the string
      * @return the type-id
      */
-    protected int getTypeIdFor(final String type) {
+    @Override
+	protected int getTypeIdFor(final String type) {
         if (type.equalsIgnoreCase(TYPE_METHOD_STR))
             return TYPE_METHOD;
         else if (type.equalsIgnoreCase(TYPE_THREAD_STR))
@@ -59,7 +60,8 @@ public class ExtendedPatternFormatter extends PatternFormatter {
      * @param run the pattern run to format.
      * @return the formatted result.
      */
-    protected String formatPatternRun(final LogEvent event, final PatternRun run) {
+    @Override
+	protected String formatPatternRun(final LogEvent event, final PatternRun run) {
         switch (run.m_type) {
             case TYPE_METHOD:
                 return getMethod(event, run.m_format);

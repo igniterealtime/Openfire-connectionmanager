@@ -442,7 +442,8 @@ public class Logger {
      *             release. When user needs to check priority it is advised
      *             that they use the is[Priority]Enabled() functions.
      */
-    public final Priority getPriority() {
+    @Deprecated
+	public final Priority getPriority() {
         return m_priority;
     }
 
@@ -454,7 +455,8 @@ public class Logger {
      *             If you are relying on its presence then there may be
      *             something wrong with the design of your system
      */
-    public final String getCategory() {
+    @Deprecated
+	public final String getCategory() {
         return m_category;
     }
 

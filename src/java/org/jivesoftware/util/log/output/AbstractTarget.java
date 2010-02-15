@@ -101,7 +101,8 @@ public abstract class AbstractTarget implements LogTarget, ErrorAware {
      * @param throwable the exception if any
      * @deprecated Use getErrorHandler().error(...) directly
      */
-    protected final void error(final String message, final Throwable throwable) {
+    @Deprecated
+	protected final void error(final String message, final Throwable throwable) {
         getErrorHandler().error(message, throwable, null);
     }
 }

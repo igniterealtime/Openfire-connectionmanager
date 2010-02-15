@@ -1117,7 +1117,8 @@ public class StringUtils {
             this.maxSize = maxSize;
         }
 
-        protected boolean removeEldestEntry(Map.Entry eldest) {
+        @Override
+		protected boolean removeEldestEntry(Map.Entry eldest) {
             return size() > maxSize;
         }
     }
