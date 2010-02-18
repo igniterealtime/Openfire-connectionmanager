@@ -909,7 +909,28 @@ public class HttpSession extends ClientSession {
             this.text = null;
             this.packets = new ArrayList<String>();
             for (Element packet : elements) {
-                this.packets.add(packet.asXML());
+                // Rewrite packet namespace according XEP-0206
+                if ("presence".equals(packet.getName())) {
+                    final StringBuilder sb = new StringBuilder();
+                    sb.append("<presence xmlns=\"jabber:client\"");
+                    sb.append(packet.asXML().substring(9));
+                    this.packets.add(sb.toString());
+                }
+                else if ("iq".equals(packet.getName())) {
+                    final StringBuilder sb = new StringBuilder();
+                    sb.append("<iq xmlns=\"jabber:client\"");
+                    sb.append(packet.asXML().substring(3));
+                    this.packets.add(sb.toString());
+                }
+                else if ("message".equals(packet.getName())) {
+                    final StringBuilder sb = new StringBuilder();
+                    sb.append("<message xmlns=\"jabber:client\"");
+                    sb.append(packet.asXML().substring(8));
+                    this.packets.add(sb.toString());
+                }
+                else {
+                    this.packets.add(packet.asXML());
+                }
             }
         }
 
