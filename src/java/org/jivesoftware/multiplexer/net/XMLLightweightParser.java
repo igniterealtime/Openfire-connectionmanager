@@ -2,25 +2,37 @@
  * $Revision: $
  * $Date: $
  *
- * Copyright (C) 2008 Jive Software. All rights reserved.
+ * Copyright (C) 2005-2008 Jive Software. All rights reserved.
  *
- * This software is published under the terms of the GNU Public License (GPL),
- * a copy of which is included in this distribution.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.jivesoftware.multiplexer.net;
 
-import org.apache.mina.common.ByteBuffer;
-import org.jivesoftware.util.JiveGlobals;
-import org.jivesoftware.util.Log;
-import org.jivesoftware.util.PropertyEventDispatcher;
-import org.jivesoftware.util.PropertyEventListener;
-
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.mina.common.ByteBuffer;
+import org.jivesoftware.util.JiveGlobals;
+import org.jivesoftware.util.PropertyEventDispatcher;
+import org.jivesoftware.util.PropertyEventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is a Light-Weight XML Parser.
@@ -34,6 +46,9 @@ import java.util.Map;
  * @author Gaston Dombiak
  */
 class XMLLightweightParser {
+	
+	private static final Logger Log = LoggerFactory.getLogger(XMLLightweightParser.class);
+
     private static final String MAX_PROPERTY_NAME = "xmpp.parser.buffer.size";
     private static int maxBufferSize;
     // Chars that rappresent CDATA section start
@@ -88,7 +103,7 @@ class XMLLightweightParser {
 
     protected boolean insideChildrenTag = false;
 
-    Charset encoder;
+    CharsetDecoder encoder;
 
     static {
         // Set default max buffer size to 1MB. If limit is reached then close connection
@@ -97,9 +112,11 @@ class XMLLightweightParser {
         PropertyEventDispatcher.addListener(new PropertyListener());
     }
 
-    public XMLLightweightParser(String charset) {
-        encoder = Charset.forName(charset);
-    }
+	public XMLLightweightParser(String charset) {
+		encoder = Charset.forName(charset).newDecoder()
+					.onMalformedInput(CodingErrorAction.REPORT)
+					.onUnmappableCharacter(CodingErrorAction.REPORT);
+	}
 
     /*
     * true if the parser has found some complete xml message.
@@ -176,7 +193,7 @@ class XMLLightweightParser {
         char lastChar = buf[readByte-1];
         if (lastChar >= 0xfff0) {
             if (Log.isDebugEnabled()) {
-            Log.debug("Waiting to get complete char: " + String.valueOf(buf));
+                Log.debug("Waiting to get complete char: " + String.valueOf(buf));
             }
             // Rewind the position one place so the last byte stays in the buffer
             // The missing byte should arrive in the next iteration. Once we have both
@@ -184,21 +201,14 @@ class XMLLightweightParser {
             byteBuffer.position(byteBuffer.position()-1);
             // Decrease the number of bytes read by one
             readByte--;
-            // Just return if nothing was read 
+            // Just return if nothing was read
             if (readByte == 0) {
                 return;
             }
         }
 
         buffer.append(buf, 0, readByte);
-        // Do nothing if the buffer only contains white spaces
-        if (buffer.charAt(0) <= ' ' && buffer.charAt(buffer.length()-1) <= ' ') {
-            if ("".equals(buffer.toString().trim())) {
-                // Empty the buffer so there is no memory leak
-                buffer.delete(0, buffer.length());
-                return;
-            }
-        }
+
         // Robot.
         char ch;
         boolean isHighSurrogate = false;
