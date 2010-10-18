@@ -26,6 +26,7 @@ import org.dom4j.io.SAXReader;
 import org.jivesoftware.multiplexer.net.ClientConnectionHandler;
 import org.jivesoftware.multiplexer.net.SSLConfig;
 import org.jivesoftware.multiplexer.net.SocketSendingTracker;
+import org.jivesoftware.multiplexer.net.StalledSessionsFilter;
 import org.jivesoftware.multiplexer.net.XMPPCodecFactory;
 import org.jivesoftware.multiplexer.net.http.HttpBindManager;
 import org.jivesoftware.util.*;
@@ -316,6 +317,8 @@ public class ConnectionManager {
         socketAcceptor.getDefaultConfig().setThreadModel(threadModel);
         // Add the XMPP codec filter
         socketAcceptor.getFilterChain().addFirst("xmpp", new ProtocolCodecFilter(new XMPPCodecFactory()));
+        // Kill sessions whose outgoing queues keep growing and fail to send traffic
+        socketAcceptor.getFilterChain().addAfter("xmpp", "outCap", new StalledSessionsFilter());
 
         try {
             // Listen on a specific network interface if it has been set.

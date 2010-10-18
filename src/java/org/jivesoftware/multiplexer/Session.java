@@ -15,7 +15,9 @@ import org.dom4j.Element;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * The session represents a connection between the server and a client (c2s) or
@@ -63,6 +65,8 @@ public abstract class Session {
     private String serverName;
 
     private Date startDate = new Date();
+    
+    private Queue<Element> stanzaQueue = new ConcurrentLinkedQueue<Element>();
 
     /**
      * Map of existing sessions. A session is added just after the initial stream header
@@ -159,6 +163,13 @@ public abstract class Session {
      */
     public Date getCreationDate() {
         return startDate;
+    }
+    
+    /**
+     * @return the current stanza queue for this session
+     */
+    public Queue<Element> getStanzaQueue() {
+        return stanzaQueue;
     }
 
     /**

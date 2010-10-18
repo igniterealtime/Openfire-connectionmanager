@@ -18,6 +18,7 @@ import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.Log;
 
 import java.io.IOException;
+import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -79,8 +80,17 @@ class ServerPacketReader implements SocketStatistic {
                             shutdown();
                         }
                         else {
-                            // Queue task that process incoming stanzas
-                            threadPool.execute(new ProcessStanzaTask(packetsHandler, doc));
+                            // If this element belongs to a session, queue it so that it can
+                            // be processed in the correct order.
+                            Session session = getSession(doc);
+                            if( session != null ) {
+                                Queue<Element> sessionQueue = session.getStanzaQueue();
+                                sessionQueue.add(doc);
+                                threadPool.execute(new ProcessSessionQueueTask(packetsHandler,session));
+                            } else {
+                                // Queue task that process incoming stanzas not related to a specific streamID
+                                threadPool.execute(new ProcessStanzaTask(packetsHandler, doc));
+                            }
                         }
                     }
                     catch (IOException e) {
@@ -108,6 +118,26 @@ class ServerPacketReader implements SocketStatistic {
     }
 
     /**
+     * @param stanza The stanza to find the session for using the streamid or id attribute
+     * @return the session associated with the given stanza, if any
+     */
+    private Session getSession(Element stanza) {
+         if( "route".equals(stanza.getName())){
+             String streamID = stanza.attributeValue("streamid");
+             return(Session.getSession(streamID));
+         } 
+         else {
+             Element wrapper = stanza.element("session");
+             if( wrapper != null ) {
+                 String streamID = wrapper.attributeValue("id");
+                 return(Session.getSession(streamID));
+             } else {
+                 return(null);
+             }
+         }
+    }
+
+    /**
      * Task that processes incoming stanzas from the server.
      */
     private class ProcessStanzaTask implements Runnable {
@@ -127,6 +157,45 @@ class ServerPacketReader implements SocketStatistic {
 
         public void run() {
             handler.handle(stanza);
+        }
+    }
+    
+    /**
+     * Task that processes a Session's stanza queue. This guarantees
+     * that stanzas are processed in the same order that they are received
+     */
+    private class ProcessSessionQueueTask implements Runnable {
+        /**
+         * The session
+         */
+        private final Session session;
+        
+        /**
+         * Actual object responsible for handling incoming traffic.
+         */
+        private final ServerPacketHandler handler;
+        
+        public ProcessSessionQueueTask(ServerPacketHandler handler, Session session) {
+            this.session = session;
+            this.handler = handler;
+        }
+        
+        /**
+         * Process all the stanzas currently in the queue for this session
+         */
+        public void run() {
+            // Synchronize on the session here to ensure that all stanzas
+            // for a given session get processed in order. This can be sub-optimal
+            // since we might block if multiple threads are processing stanzas
+            // for the same client, but the handler.handle() call should be quick,
+            // and correctness seems more important here.
+            synchronized(session) {
+                Element stanza = session.getStanzaQueue().poll();
+                while( stanza != null ){
+                    handler.handle(stanza);
+                    stanza = session.getStanzaQueue().poll();
+                }
+            }
         }
     }
 }

@@ -14,6 +14,7 @@ package org.jivesoftware.multiplexer.net;
 import org.dom4j.Element;
 import org.dom4j.io.XMPPPacketReader;
 import org.jivesoftware.multiplexer.*;
+import org.jivesoftware.multiplexer.net.http.FlashCrossDomainServlet;
 import org.jivesoftware.util.Log;
 import org.jivesoftware.util.StringUtils;
 import org.xmlpull.v1.XmlPullParser;
@@ -97,8 +98,15 @@ abstract class StanzaHandler {
         boolean initialStream = stanza.startsWith("<stream:stream") || stanza.startsWith("<flash:stream");
         if (!sessionCreated || initialStream) {
             if (!initialStream) {
-                // Ignore <?xml version="1.0"?>
-                return;
+                // Allow requests for flash socket policy files directly on the client listener port
+                if (stanza.startsWith("<policy-file-request/>")) {
+                    connection.deliverRawText(FlashCrossDomainServlet.getCrossDomainString() + '\0');
+                    return;
+                }
+                else {
+                    // Ignore <?xml version="1.0"?>
+                    return;
+                }
             }
             // Found an stream:stream tag...
             if (!sessionCreated) {

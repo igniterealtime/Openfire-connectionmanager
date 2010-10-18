@@ -44,6 +44,11 @@ public class FlashCrossDomainServlet extends HttpServlet {
     protected void doGet(HttpServletRequest httpServletRequest,
                          HttpServletResponse response) throws
             ServletException, IOException {
+        response.setContentType("text/xml");
+        response.getOutputStream().write(getCrossDomainString().getBytes());
+    }
+    
+    public static String getCrossDomainString() {
         StringBuilder builder = new StringBuilder();
         builder.append(CROSS_DOMAIN_TEXT);
         getPortList(builder);
@@ -51,11 +56,10 @@ public class FlashCrossDomainServlet extends HttpServlet {
         getSecure(builder);
         builder.append(CROSS_DOMAIN_END_TEXT);
         builder.append("\n");
-        response.setContentType("text/xml");
-        response.getOutputStream().write(builder.toString().getBytes());
+        return(builder.toString());
     }
     
-    private StringBuilder getPortList(StringBuilder builder) {
+    private static StringBuilder getPortList(StringBuilder builder) {
         boolean multiple = false;
         if(ConnectionManager.getInstance().getClientListenerPort() > 0) {
             builder.append(ConnectionManager.getInstance().getClientListenerPort());
@@ -89,7 +93,7 @@ public class FlashCrossDomainServlet extends HttpServlet {
         return builder;
     }
     
-    private StringBuilder getSecure(StringBuilder builder) {
+    private static StringBuilder getSecure(StringBuilder builder) {
         if (JiveGlobals.getBooleanProperty(CROSS_DOMAIN_SECURE_ENABLED,CROSS_DOMAIN_SECURE_DEFAULT)) {
             builder.append("true");
         } else {
