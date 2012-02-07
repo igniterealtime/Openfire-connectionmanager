@@ -26,13 +26,13 @@ import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.mina.common.ByteBuffer;
 import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.PropertyEventDispatcher;
 import org.jivesoftware.util.PropertyEventListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This is a Light-Weight XML Parser.
@@ -46,8 +46,8 @@ import org.slf4j.LoggerFactory;
  * @author Gaston Dombiak
  */
 class XMLLightweightParser {
-	
-	private static final Logger Log = LoggerFactory.getLogger(XMLLightweightParser.class);
+
+	private static final Pattern XML_HAS_CHARREF = Pattern.compile("&#(0*([0-9]+)|[xX]0*([0-9a-fA-F]+));");
 
     private static final String MAX_PROPERTY_NAME = "xmpp.parser.buffer.size";
     private static int maxBufferSize;
@@ -112,11 +112,11 @@ class XMLLightweightParser {
         PropertyEventDispatcher.addListener(new PropertyListener());
     }
 
-	public XMLLightweightParser(String charset) {
-		encoder = Charset.forName(charset).newDecoder()
-					.onMalformedInput(CodingErrorAction.REPORT)
-					.onUnmappableCharacter(CodingErrorAction.REPORT);
-	}
+    public XMLLightweightParser(String charset) {
+        encoder = Charset.forName(charset).newDecoder()
+			.onMalformedInput(CodingErrorAction.REPLACE)
+			.onUnmappableCharacter(CodingErrorAction.REPLACE);
+    }
 
     /*
     * true if the parser has found some complete xml message.
@@ -155,9 +155,12 @@ class XMLLightweightParser {
     /*
     * Method that add a message to the list and reinit parser.
     */
-    protected void foundMsg(String msg) {
+    protected void foundMsg(String msg) throws Exception {
         // Add message to the complete message list
         if (msg != null) {
+        	if (hasIllegalCharacterReferences(msg)) {
+        		throw new Exception("Illegal character reference found in: " + msg);
+        	}
             msgs.add(msg);
         }
         // Move the position into the buffer
@@ -180,39 +183,24 @@ class XMLLightweightParser {
         if (buffer.length() > maxBufferSize) {
             throw new Exception("Stopped parsing never ending stanza");
         }
-        CharBuffer charBuffer = encoder.decode(byteBuffer.buf());
-        char[] buf = charBuffer.array();
-        int readByte = charBuffer.remaining();
+        CharBuffer charBuffer = CharBuffer.allocate(byteBuffer.capacity());
+        encoder.reset();
+        encoder.decode(byteBuffer.buf(), charBuffer, false);
+        char[] buf = new char[charBuffer.position()];
+        charBuffer.flip();charBuffer.get(buf);
+        int readChar = buf.length;
 
         // Just return if nothing was read
-        if (readByte == 0) {
+        if (readChar == 0) {
             return;
         }
 
-        // Verify if the last received byte is an incomplete double byte character
-        char lastChar = buf[readByte-1];
-        if (lastChar >= 0xfff0) {
-            if (Log.isDebugEnabled()) {
-                Log.debug("Waiting to get complete char: " + String.valueOf(buf));
-            }
-            // Rewind the position one place so the last byte stays in the buffer
-            // The missing byte should arrive in the next iteration. Once we have both
-            // of bytes we will have the correct character
-            byteBuffer.position(byteBuffer.position()-1);
-            // Decrease the number of bytes read by one
-            readByte--;
-            // Just return if nothing was read
-            if (readByte == 0) {
-                return;
-            }
-        }
-
-        buffer.append(buf, 0, readByte);
+        buffer.append(buf);
 
         // Robot.
         char ch;
         boolean isHighSurrogate = false;
-        for (int i = 0; i < readByte; i++) {
+        for (int i = 0; i < readChar; i++) {
             ch = buf[i];
             if (ch < 0x20 && ch != 0x9 && ch != 0xA && ch != 0xD && ch != 0x0) {
                  //Unicode characters in the range 0x0000-0x001F other than 9, A, and D are not allowed in XML
@@ -243,7 +231,7 @@ class XMLLightweightParser {
                     if (tailCount == head.length()) {
                         // Close stanza found!
                         // Calculate the correct start,end position of the message into the buffer
-                        int end = buffer.length() - readByte + (i + 1);
+                        int end = buffer.length() - readChar + (i + 1);
                         String msg = buffer.substring(startLastMsg, end);
                         // Add message to the list
                         foundMsg(msg);
@@ -282,7 +270,7 @@ class XMLLightweightParser {
                     status = XMLLightweightParser.OUTSIDE;
                     if (depth < 1) {
                         // Found a tag in the form <tag />
-                        int end = buffer.length() - readByte + (i + 1);
+                        int end = buffer.length() - readChar + (i + 1);
                         String msg = buffer.substring(startLastMsg, end);
                         // Add message to the list
                         foundMsg(msg);
@@ -328,7 +316,7 @@ class XMLLightweightParser {
                     if (insideRootTag && ("stream:stream>".equals(head.toString()) ||
                             ("?xml>".equals(head.toString())) || ("flash:stream>".equals(head.toString())))) {
                         // Found closing stream:stream
-                        int end = buffer.length() - readByte + (i + 1);
+                        int end = buffer.length() - readChar + (i + 1);
                         // Skip LF, CR and other "weird" characters that could appear
                         while (startLastMsg < end && '<' != buffer.charAt(startLastMsg)) {
                             startLastMsg++;
@@ -382,6 +370,65 @@ class XMLLightweightParser {
         }
     }
 
+	/**
+	 * This method verifies if the provided argument contains at least one numeric character reference (
+	 * <code>CharRef	   ::=   	'&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';</code>) for which the decimal or hexidecimal
+	 * character value refers to an invalid XML 1.0 character.
+	 * 
+	 * @param string
+	 *            The input string
+	 * @return <tt>true</tt> if the input string contains an invalid numeric character reference, <tt>false</tt>
+	 *         otherwise.
+	 * @see http://www.w3.org/TR/2008/REC-xml-20081126/#dt-charref
+	 */
+	public static boolean hasIllegalCharacterReferences(String string) {
+		// If there's no character reference, don't bother to do more specific checking.
+		final Matcher matcher = XML_HAS_CHARREF.matcher(string);
+
+		while (matcher.find()) {
+			final String decValue = matcher.group(2);
+			if (decValue != null) {
+				final int value = Integer.parseInt(decValue);
+				if (!isLegalXmlCharacter(value)) {
+					return true;
+				} else {
+					continue;
+				}
+			}
+
+			final String hexValue = matcher.group(3);
+			if (hexValue != null) {
+				final int value = Integer.parseInt(hexValue, 16);
+				if (!isLegalXmlCharacter(value)) {
+					return true;
+				} else {
+					continue;
+				}
+			}
+
+			// This is bad. The XML_HAS_CHARREF expression should have a hit for either the decimal
+			// or the heximal notation.
+			throw new IllegalStateException(
+					"An error occurred while searching for illegal character references in the value [" + string + "].");
+		}
+
+		return false;
+	}
+
+	/**
+	 * Verifies if the codepoint value represents a valid character as defined in paragraph 2.2 of
+	 * "Extensible Markup Language (XML) 1.0 (Fifth Edition)"
+	 * 
+	 * @param value
+	 *            the codepoint
+	 * @return <tt>true</tt> if the codepoint is a valid charater per XML 1.0 definition, <tt>false</tt> otherwise.
+	 * @see http://www.w3.org/TR/2008/REC-xml-20081126/#NT-Char
+	 */
+	public static boolean isLegalXmlCharacter(int value) {
+		return value == 0x9 || value == 0xA || value == 0xD || (value >= 0x20 && value <= 0xD7FF)
+				|| (value >= 0xE000 && value <= 0xFFFD) || (value >= 0x10000 && value <= 0x10FFFF);
+	}
+	
     private static class PropertyListener implements PropertyEventListener {
         public void propertySet(String property, Map<String, Object> params) {
             if (MAX_PROPERTY_NAME.equals(property)) {
