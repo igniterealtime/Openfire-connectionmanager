@@ -20,6 +20,10 @@
 
 package org.jivesoftware.multiplexer.net;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
@@ -27,15 +31,12 @@ import org.apache.mina.filter.codec.ProtocolDecoderException;
 import org.jivesoftware.multiplexer.Connection;
 import org.jivesoftware.multiplexer.ConnectionManager;
 import org.jivesoftware.multiplexer.PacketRouter;
+import org.jivesoftware.multiplexer.StreamError;
 import org.jivesoftware.multiplexer.spi.ServerRouter;
 import org.jivesoftware.util.Log;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A ConnectionHandler is responsible for creating new sessions, destroying sessions and delivering
@@ -110,14 +111,24 @@ public abstract class ConnectionHandler extends IoHandlerAdapter {
 	public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
         if (cause instanceof IOException) {
             // TODO Verify if there were packets pending to be sent and decide what to do with them
-            Log.debug(cause);
+            Log.debug("ConnectionHandler: ",cause);
+        }
+        else if (cause instanceof XMLNotWellFormedException) {
+        	Log.warn("Closing session due to malformed XML: " + session, cause);
+        	final Connection connection = (Connection) session.getAttribute(CONNECTION);
+            final StreamError error = new StreamError(StreamError.Condition.xml_not_well_formed);
+            connection.deliverRawText(error.toXML());
+            session.close();
         }
         else if (cause instanceof ProtocolDecoderException) {
             Log.warn("Closing session due to exception: " + session, cause);
+            final Connection connection = (Connection) session.getAttribute(CONNECTION);
+            final StreamError error = new StreamError(StreamError.Condition.internal_server_error);
+            connection.deliverRawText(error.toXML());
             session.close();
         }
         else {
-            Log.error(cause);
+            Log.error(cause.getMessage(), cause);
         }
     }
 
