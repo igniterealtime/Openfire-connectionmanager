@@ -318,7 +318,8 @@ public class NIOConnection implements Connection {
             tm = new TrustManager[]{new ServerTrustManager(remoteServer, ksTrust)};
         }
 
-        SSLContext tlsContext = SSLContext.getInstance("TLS");
+        String algorithm = JiveGlobals.getXMLProperty("xmpp.socket.ssl.algorithm", "TLS");
+        SSLContext tlsContext = SSLContext.getInstance(algorithm);
 
         tlsContext.init(km, tm, null);
 
