@@ -21,6 +21,8 @@
 package org.jivesoftware.multiplexer;
 
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A basic stream ID factory that produces id's using java.util.Random
@@ -32,15 +34,21 @@ import java.util.Random;
  * @author Gaston Dombiak
  */
 public class StreamIDFactory {
-    /**
-     * The random number to use, someone with Java can predict stream IDs if they can guess the current seed *
-     */
-    Random random = new Random();
+
+    private static final ConcurrentHashMap<String, Boolean> usingStreamIDs = new ConcurrentHashMap<>();
 
     String managerName = ConnectionManager.getInstance().getName();
 
     public String createStreamID() {
-        return managerName + Integer.toHexString(random.nextInt());
+        String streamID;
+        do {
+            streamID = managerName + Integer.toHexString(ThreadLocalRandom.current().nextInt());
+        } while(usingStreamIDs.putIfAbsent(streamID, Boolean.TRUE) == null);
+        return streamID;
+    }
+
+    public static void releaseId(String streamId){
+        usingStreamIDs.remove(streamId);
     }
 
 }
