@@ -35,14 +35,16 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class StreamIDFactory {
 
-    private static final ConcurrentHashMap<String, Boolean> usingStreamIDs = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Boolean> usingStreamIDs = new ConcurrentHashMap<String, Boolean>();
 
     String managerName = ConnectionManager.getInstance().getName();
+
+    private Random rand = new Random();
 
     public String createStreamID() {
         String streamID;
         do {
-            streamID = managerName + Integer.toHexString(ThreadLocalRandom.current().nextInt());
+            streamID = managerName + Integer.toHexString(rand.nextInt());
         } while(usingStreamIDs.putIfAbsent(streamID, Boolean.TRUE) == null);
         return streamID;
     }
