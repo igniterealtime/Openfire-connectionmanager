@@ -22,6 +22,7 @@ package org.jivesoftware.multiplexer;
 
 import org.dom4j.Element;
 import org.jivesoftware.multiplexer.spi.ClientFailoverDeliverer;
+import org.jivesoftware.multiplexer.task.ClientTask;
 import org.jivesoftware.util.LocaleUtils;
 import org.jivesoftware.util.Log;
 import org.xmlpull.v1.XmlPullParser;
@@ -29,6 +30,9 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Session that represents a client to server connection.
@@ -305,5 +309,40 @@ public class ClientSession extends Session {
     @Override
 	public boolean isClosed() {
         return status == STATUS_CLOSED;
+    }
+
+    private final AtomicBoolean sessionCreatedOnServer = new AtomicBoolean(
+            false);
+
+    private ArrayList<ClientTask> pendingTasks = new ArrayList<ClientTask>();
+
+    public boolean isSessionCreatedOnServer() {
+        return sessionCreatedOnServer.get();
+    }
+
+    public void pendClientTask(ClientTask task, AbstractExecutorService executor) {
+        if (sessionCreatedOnServer.get()) {
+            executor.execute(task);
+        } else {
+            synchronized (sessionCreatedOnServer) {
+                if (sessionCreatedOnServer.get()) {
+                    executor.execute(task);
+                } else {
+                    pendingTasks.add(task);
+                }
+            }
+        }
+    }
+
+    public void onSessionCreatedOnServer(AbstractExecutorService executor) {
+        synchronized (sessionCreatedOnServer) {
+            if (!sessionCreatedOnServer.get()) {
+                for (ClientTask task : pendingTasks) {
+                    executor.execute(task);
+                }
+                pendingTasks = null;
+            }
+            sessionCreatedOnServer.compareAndSet(false, true);
+        }
     }
 }
