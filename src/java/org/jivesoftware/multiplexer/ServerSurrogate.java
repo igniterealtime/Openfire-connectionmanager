@@ -192,7 +192,13 @@ public class ServerSurrogate {
      * @param streamID the stream ID assigned by the connection manager to the session.
      */
     public void send(String stanza, String streamID) {
-        threadPool.execute(new RouteTask(streamID, stanza));
+        RouteTask task = new RouteTask(streamID, stanza);
+        ClientSession session = (ClientSession) Session.getSession(streamID);
+        if (session == null || session.isSessionCreatedOnServer()) {
+            threadPool.execute(new RouteTask(streamID, stanza));
+        } else {
+            session.pendClientTask(task, threadPool);
+        }
     }
 
     /**
@@ -400,5 +406,9 @@ public class ServerSurrogate {
             serverConnections.put(t.getName(), t);
             return t;
         }
+    }
+
+    AbstractExecutorService getThreadPool(){
+        return threadPool;
     }
 }

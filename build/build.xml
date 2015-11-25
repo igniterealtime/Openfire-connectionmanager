@@ -166,6 +166,7 @@
                     <contains string="${ant.version}" substring="1.6"/>
                     <contains string="${ant.version}" substring="1.7"/>
                     <contains string="${ant.version}" substring="1.8"/>
+                    <contains string="${ant.version}" substring="1.9"/>
                 </or>
             </not>
         </condition>
@@ -174,6 +175,9 @@
                 <or>
                     <contains string="${ant.java.version}" substring="1.5"/>
                     <contains string="${ant.java.version}" substring="1.6"/>
+                    <contains string="${ant.java.version}" substring="1.7"/>
+                    <contains string="${ant.java.version}" substring="1.8"/>
+                    <contains string="${ant.java.version}" substring="1.9"/>
                 </or>
             </not>
         </condition>
@@ -214,6 +218,7 @@
             debug="on"
             source="1.5"
             target="1.5"
+            encoding="UTF-8"
             >
             <src path="${src.java.dir}"/>
             <patternset refid="compile.sources"/>

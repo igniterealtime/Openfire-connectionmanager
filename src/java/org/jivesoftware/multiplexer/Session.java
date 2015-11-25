@@ -90,6 +90,7 @@ public abstract class Session {
     }
 
     public static void removeSession(String streamID) {
+        StreamIDFactory.releaseId(streamID);
         sessions.remove(streamID);
     }
 

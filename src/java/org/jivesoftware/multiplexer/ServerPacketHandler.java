@@ -95,7 +95,26 @@ class ServerPacketHandler {
                     }
                 }
             } else if ("result".equals(type)) {
-                if (Log.isDebugEnabled()) {
+                boolean handled = false;
+                Element wrapper = stanza.element("session");
+                if (wrapper != null) {
+                    String streamID = wrapper.attributeValue("id");
+                    if (wrapper.element("create") != null) {
+                        //we got session create response
+                        Session session=Session.getSession(streamID);
+                        if(session!=null){
+                            handled = true;
+                            ClientSession cs=(ClientSession)session;
+                            cs.onSessionCreatedOnServer(ConnectionManager.getInstance().getServerSurrogate().getThreadPool());
+                            if (Log.isDebugEnabled()) {
+                                Log.debug("Session created on server with streamID: " + streamID);
+                            }
+                        }else{
+                            Log.warn("Can't get session with streamId=" + streamID);
+                        }
+                    }
+                }
+                if (Log.isDebugEnabled() && !handled) {
                     Log.debug("IQ stanza of type RESULT was discarded: " + stanza.asXML());
                 }
             } else if ("error".equals(type)) {
